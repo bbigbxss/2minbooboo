@@ -185,6 +185,55 @@ rawProducts.forEach((product) => {
   products.push(groupedProduct);
 });
 
+const normalizeProductName = (value = "") =>
+  value.toLocaleLowerCase().replace(/\s+/g, " ").trim();
+
+const staticProductsById = new Map(products.map((product) => [product.id, product]));
+const staticProductsByName = new Map(
+  products.map((product) => [
+    `${product.category}-${normalizeProductName(product.name)}`,
+    product,
+  ]),
+);
+
+const isDeployUnsafeImageSrc = (src = "") => {
+  const value = String(src).trim();
+
+  if (!value) return true;
+  if (/^(blob:|file:)/i.test(value)) return true;
+  if (/^https?:\/\/(?:localhost|127\.0\.0\.1|\[::1\])/i.test(value)) return true;
+  if (/^[a-z]:\\/i.test(value)) return true;
+  if (/^\/src\//i.test(value)) return true;
+  if (/^\.{1,2}\//.test(value)) return true;
+
+  return false;
+};
+
+const getStaticProductMatch = (product) =>
+  staticProductsById.get(product.id) ??
+  staticProductsByName.get(
+    `${product.category}-${normalizeProductName(product.name)}`,
+  );
+
+const ensureDeploySafeProductImages = (remoteProducts) =>
+  remoteProducts.map((product) => {
+    const hasUnsafeMedia =
+      !product.media?.length ||
+      product.media.some((item) => isDeployUnsafeImageSrc(item.src));
+
+    if (!hasUnsafeMedia) return product;
+
+    const staticMatch = getStaticProductMatch(product);
+    if (!staticMatch?.media?.length) return product;
+
+    return {
+      ...product,
+      image: staticMatch.image,
+      images: staticMatch.images,
+      media: staticMatch.media,
+    };
+  });
+
 const findSeriesKey = (name) => {
   const normalized = name.toLocaleLowerCase().trim();
   return Object.keys(seriesColors).find((key) => normalized.includes(key));
@@ -884,7 +933,7 @@ function App() {
   const refreshStorefrontProducts = async () => {
     const remoteProducts = await fetchStorefrontProducts();
     if (remoteProducts.length) {
-      setStoreProducts(remoteProducts);
+      setStoreProducts(ensureDeploySafeProductImages(remoteProducts));
     }
     return remoteProducts;
   };
