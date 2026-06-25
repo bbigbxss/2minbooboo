@@ -205,6 +205,9 @@ const isDeployUnsafeImageSrc = (src = "") => {
   if (/^[a-z]:\\/i.test(value)) return true;
   if (/^\/src\//i.test(value)) return true;
   if (/^\.{1,2}\//.test(value)) return true;
+  if (/\/assets\/[^?#]+\.(?:png|jpe?g|webp|gif|avif)(?:[?#].*)?$/i.test(value)) {
+    return true;
+  }
 
   return false;
 };
@@ -217,22 +220,50 @@ const getStaticProductMatch = (product) =>
 
 const ensureDeploySafeProductImages = (remoteProducts) =>
   remoteProducts.map((product) => {
+    const staticMatch = getStaticProductMatch(product);
+    const fallbackMedia = staticMatch?.media ?? [];
     const hasUnsafeMedia =
       !product.media?.length ||
       product.media.some((item) => isDeployUnsafeImageSrc(item.src));
 
-    if (!hasUnsafeMedia) return product;
-
-    const staticMatch = getStaticProductMatch(product);
     if (!staticMatch?.media?.length) return product;
 
-    return {
+    const productWithFallbacks = {
       ...product,
+      fallbackImage: staticMatch.image,
+      fallbackImages: staticMatch.images,
+      fallbackMedia,
+    };
+
+    if (!hasUnsafeMedia) return productWithFallbacks;
+
+    return {
+      ...productWithFallbacks,
       image: staticMatch.image,
       images: staticMatch.images,
       media: staticMatch.media,
     };
   });
+
+const getProductFallbackMedia = (product, index = 0) => {
+  if (!product) return undefined;
+
+  const fallbackMedia = product.fallbackMedia?.length
+    ? product.fallbackMedia
+    : product.media?.length
+      ? product.media
+      : product.fallbackImage
+        ? [{ src: product.fallbackImage, kind: "product", flip: false }]
+        : [];
+
+  return fallbackMedia[index % Math.max(fallbackMedia.length, 1)];
+};
+
+const swapBrokenImageToFallback = (event, fallbackSrc) => {
+  if (!fallbackSrc || event.currentTarget.dataset.fallbackApplied === "true") return;
+  event.currentTarget.dataset.fallbackApplied = "true";
+  event.currentTarget.src = fallbackSrc;
+};
 
 const findSeriesKey = (name) => {
   const normalized = name.toLocaleLowerCase().trim();
@@ -375,7 +406,7 @@ function Stars({ count = 5 }) {
   );
 }
 
-function ProductZoom({ product, media, onClose }) {
+function ProductZoom({ product, media, fallbackMedia, onClose }) {
   useEffect(() => {
     const onKeyDown = (event) => {
       if (event.key === "Escape") onClose();
@@ -407,6 +438,9 @@ function ProductZoom({ product, media, onClose }) {
           <img
             className={media.flip ? "is-flipped" : ""}
             src={media.src}
+            onError={(event) =>
+              swapBrokenImageToFallback(event, fallbackMedia?.src)
+            }
             alt={`${product.name} ภาพขยาย`}
           />
         </div>
@@ -431,6 +465,7 @@ function ProductCard({ product, onAdd, compact = false }) {
     ? product.media
     : [{ src: product.image, kind: "product", flip: false }];
   const activeMedia = media[imageIndex];
+  const activeFallbackMedia = getProductFallbackMedia(product, imageIndex);
   const hasMultipleImages = media.length > 1;
   const [mood, length] = getSeriesDetail(product.name);
 
@@ -475,6 +510,9 @@ function ProductCard({ product, onAdd, compact = false }) {
             src={activeMedia.src}
             alt={`${product.name} ภาพที่ ${imageIndex + 1}`}
             loading="lazy"
+            onError={(event) =>
+              swapBrokenImageToFallback(event, activeFallbackMedia?.src)
+            }
           />
           <span className="zoom-hint" aria-hidden="true">
             <ZoomIn size={16} />
@@ -524,6 +562,7 @@ function ProductCard({ product, onAdd, compact = false }) {
         <ProductZoom
           product={product}
           media={activeMedia}
+          fallbackMedia={activeFallbackMedia}
           onClose={() => setZoomOpen(false)}
         />
       ) : null}
@@ -714,6 +753,12 @@ function CartDrawer({
                       className={item.media?.[0]?.flip ? "is-flipped" : ""}
                       src={item.media?.[0]?.src ?? item.image}
                       alt={item.name}
+                      onError={(event) =>
+                        swapBrokenImageToFallback(
+                          event,
+                          getProductFallbackMedia(item, 0)?.src,
+                        )
+                      }
                     />
                   </div>
                   <div className="cart-item-copy">
@@ -750,7 +795,16 @@ function CartDrawer({
               <h3>คุณอาจจะชอบ</h3>
               {recommendations.slice(0, 2).map((product) => (
                 <article key={product.id}>
-                  <img src={product.media?.[0]?.src ?? product.image} alt="" />
+                  <img
+                    src={product.media?.[0]?.src ?? product.image}
+                    alt=""
+                    onError={(event) =>
+                      swapBrokenImageToFallback(
+                        event,
+                        getProductFallbackMedia(product, 0)?.src,
+                      )
+                    }
+                  />
                   <div>
                     <strong>{product.name}</strong>
                     <span>฿{product.price.toLocaleString("th-TH")}</span>
@@ -823,7 +877,16 @@ function SearchOverlay({ products: allProducts, onClose, onAdd }) {
       <div className="search-results">
         {results.map((product) => (
           <article key={product.id}>
-            <img src={product.media?.[0]?.src ?? product.image} alt="" />
+            <img
+              src={product.media?.[0]?.src ?? product.image}
+              alt=""
+              onError={(event) =>
+                swapBrokenImageToFallback(
+                  event,
+                  getProductFallbackMedia(product, 0)?.src,
+                )
+              }
+            />
             <div>
               <p>{categoryLabels[product.category] ?? product.category}</p>
               <h3>{product.name}</h3>
@@ -1443,6 +1506,12 @@ function App() {
                   storefrontNewMiniProducts[0]?.image
                 }
                 alt=""
+                onError={(event) =>
+                  swapBrokenImageToFallback(
+                    event,
+                    getProductFallbackMedia(storefrontNewMiniProducts[0], 1)?.src,
+                  )
+                }
               />
               <span>
                 NEW MINI SERIES
@@ -1733,6 +1802,12 @@ function App() {
                       src={media.src}
                       alt={product.name}
                       loading="lazy"
+                      onError={(event) =>
+                        swapBrokenImageToFallback(
+                          event,
+                          getProductFallbackMedia(product, index)?.src,
+                        )
+                      }
                     />
                     <span>
                       <small>MINI SIZE</small>
@@ -1762,6 +1837,17 @@ function App() {
               }
               alt="Bangkok Babe real look"
               loading="lazy"
+              onError={(event) =>
+                swapBrokenImageToFallback(
+                  event,
+                  getProductFallbackMedia(
+                    storefrontLifestyleImages.find((product) =>
+                      /bangkok/i.test(product.name),
+                    ) ?? storefrontLifestyleImages[0],
+                    0,
+                  )?.src,
+                )
+              }
             />
           </div>
           <div className="campaign-copy">
@@ -1785,7 +1871,17 @@ function App() {
           <div className="look-grid">
             {lookImages.map((product, index) => (
               <article key={product.id}>
-                <img src={product.image} alt={product.name} loading="lazy" />
+                <img
+                  src={product.image}
+                  alt={product.name}
+                  loading="lazy"
+                  onError={(event) =>
+                    swapBrokenImageToFallback(
+                      event,
+                      getProductFallbackMedia(product, 0)?.src,
+                    )
+                  }
+                />
                 <div>
                   <span>0{index + 1}</span>
                   <h3>
@@ -1826,6 +1922,15 @@ function App() {
               }
               alt="วิธีติดขนตา 2minBooBoo"
               loading="lazy"
+              onError={(event) =>
+                swapBrokenImageToFallback(
+                  event,
+                  getProductFallbackMedia(
+                    storefrontNewMiniProducts[1] ?? storefrontNewMiniProducts[0],
+                    0,
+                  )?.src,
+                )
+              }
             />
             <button aria-label="ดูวิดีโอวิธีใช้">
               <Play fill="currentColor" />
@@ -1961,6 +2066,12 @@ function App() {
                   src={product.media?.[0]?.src ?? product.image}
                   alt=""
                   loading="lazy"
+                  onError={(event) =>
+                    swapBrokenImageToFallback(
+                      event,
+                      getProductFallbackMedia(product, 0)?.src,
+                    )
+                  }
                 />
                 <Instagram />
               </a>
