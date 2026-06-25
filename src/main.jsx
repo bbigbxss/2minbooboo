@@ -27,6 +27,9 @@ import {
   X,
   ZoomIn,
 } from "lucide-react";
+import AdminPanel from "./AdminPanel.jsx";
+import heroMiniSizeBackground from "./assets/hero/mini-size-hero-bg.png";
+import { fetchStorefrontProducts } from "./supabaseProducts";
 import "./styles.css";
 
 const productModules = import.meta.glob(
@@ -61,7 +64,7 @@ const categoryOrder = [
 ];
 
 const categoryLabels = {
-  [CATEGORY_ALL]: "ทั้งหมด",
+  [CATEGORY_ALL]: "ALL",
   "MINI Size": "MINI SIZE",
   "New MINI Size": "NEW MINI",
   Travelsize: "TRAVEL SIZE",
@@ -289,6 +292,17 @@ const categoryTiles = [
   },
 ];
 
+const getAppRoute = () => {
+  const hash = window.location.hash.replace(/^#\/?/, "").toLocaleLowerCase();
+  if (hash === "admin" || window.location.pathname.toLocaleLowerCase().includes("/admin")) {
+    return "admin";
+  }
+  if (hash === "products" || window.location.pathname.toLocaleLowerCase().includes("/products")) {
+    return "products";
+  }
+  return "home";
+};
+
 function Logo({ light = false }) {
   return (
     <a
@@ -503,6 +517,84 @@ function ProductRail({ title, eyebrow, items, onAdd, action }) {
   );
 }
 
+function ProductListingPage({
+  products: allProducts,
+  activeCategory,
+  onCategoryChange,
+  onAdd,
+  onBackHome,
+}) {
+  const visibleProducts = useMemo(
+    () =>
+      activeCategory === CATEGORY_ALL
+        ? allProducts.filter(
+            (product) =>
+              product.category !== CATEGORY_REAL &&
+              product.category !== CATEGORY_HOW,
+          )
+        : allProducts.filter((product) => product.category === activeCategory),
+    [activeCategory, allProducts],
+  );
+
+  const pageCategories = categoryOrder.filter(
+    (item) => item !== CATEGORY_REAL && item !== CATEGORY_HOW,
+  );
+
+  return (
+    <main className="products-page">
+      <section className="products-page-hero">
+        <p>2MINBOOBOO COLLECTION</p>
+        <h1>สินค้าทั้งหมด</h1>
+        <span>
+          เลือกดูขนตาทุกรุ่นแบบจัดเต็ม กดซูมรูปได้ และเพิ่มลงถุงได้จากหน้านี้เลย
+        </span>
+        <button onClick={onBackHome}>
+          กลับหน้าแรก <ArrowRight />
+        </button>
+      </section>
+
+      <section className="products-page-panel">
+        <div className="products-page-toolbar">
+          <div>
+            <p>เลือกหมวดหมู่</p>
+            <h2>{categoryLabels[activeCategory] ?? activeCategory}</h2>
+          </div>
+          <span>{visibleProducts.length} รายการ</span>
+        </div>
+
+        <div className="products-page-tabs" role="tablist">
+          {pageCategories.map((item) => (
+            <button
+              key={item}
+              className={activeCategory === item ? "is-active" : ""}
+              onClick={() => onCategoryChange(item)}
+              role="tab"
+              aria-selected={activeCategory === item}
+            >
+              {categoryLabels[item]}
+            </button>
+          ))}
+        </div>
+
+        <div className="products-grid">
+          {visibleProducts.map((product) => (
+            <ProductCard key={product.id} product={product} onAdd={onAdd} />
+          ))}
+        </div>
+
+        {visibleProducts.length === 0 ? (
+          <div className="products-empty">
+            <p>ยังไม่มีสินค้าในหมวดนี้</p>
+            <button onClick={() => onCategoryChange(CATEGORY_ALL)}>
+              ดูสินค้าทั้งหมด
+            </button>
+          </div>
+        ) : null}
+      </section>
+    </main>
+  );
+}
+
 function CartDrawer({
   items,
   recommendations,
@@ -698,6 +790,8 @@ function SearchOverlay({ products: allProducts, onClose, onAdd }) {
 }
 
 function App() {
+  const [currentRoute, setCurrentRoute] = useState(getAppRoute);
+  const isAdminRoute = currentRoute === "admin";
   const [category, setCategory] = useState(CATEGORY_ALL);
   const [cart, setCart] = useState([]);
   const [cartOpen, setCartOpen] = useState(false);
@@ -706,6 +800,8 @@ function App() {
   const [megaOpen, setMegaOpen] = useState(false);
   const [heroIndex, setHeroIndex] = useState(0);
   const [featuredCategory, setFeaturedCategory] = useState("New MINI Size");
+  const [miniShowcaseIndex, setMiniShowcaseIndex] = useState(0);
+  const [storeProducts, setStoreProducts] = useState(products);
   const featuredRailRef = useRef(null);
   const catalogRailRef = useRef(null);
   const featuredDragRef = useRef({
@@ -725,6 +821,87 @@ function App() {
   const featuredScrollAnimationRef = useRef(null);
   const catalogScrollAnimationRef = useRef(null);
 
+  const storefrontProducts = storeProducts.length ? storeProducts : products;
+  const storefrontLifestyleImages = useMemo(
+    () =>
+      storefrontProducts.filter(
+        (product) => product.category === CATEGORY_REAL,
+      ),
+    [storefrontProducts],
+  );
+  const storefrontMiniProducts = useMemo(
+    () =>
+      storefrontProducts.filter((product) => product.category === "MINI Size"),
+    [storefrontProducts],
+  );
+  const storefrontNewMiniProducts = useMemo(
+    () =>
+      storefrontProducts.filter(
+        (product) => product.category === "New MINI Size",
+      ),
+    [storefrontProducts],
+  );
+  const storefrontFullSizeProducts = useMemo(
+    () =>
+      storefrontProducts.filter((product) => product.category === CATEGORY_FULL),
+    [storefrontProducts],
+  );
+  const storefrontHeroSlides = useMemo(
+    () =>
+      heroSlides.map((slide, index) => ({
+        ...slide,
+        image:
+          index === 0
+            ? storefrontLifestyleImages.find((product) =>
+                /california/i.test(product.name),
+              )?.image ?? storefrontLifestyleImages[0]?.image ?? slide.image
+            : storefrontLifestyleImages.find((product) =>
+                /hollywood/i.test(product.name),
+              )?.image ?? storefrontLifestyleImages[1]?.image ?? slide.image,
+        products:
+          index === 0
+            ? [
+                storefrontNewMiniProducts[0],
+                storefrontMiniProducts[0],
+                storefrontFullSizeProducts[0],
+                storefrontNewMiniProducts[1],
+              ].filter(Boolean)
+            : [
+                storefrontNewMiniProducts[1],
+                storefrontNewMiniProducts[2],
+                storefrontMiniProducts[1],
+                storefrontFullSizeProducts[1],
+              ].filter(Boolean),
+      })),
+    [
+      storefrontFullSizeProducts,
+      storefrontLifestyleImages,
+      storefrontMiniProducts,
+      storefrontNewMiniProducts,
+    ],
+  );
+
+  const refreshStorefrontProducts = async () => {
+    const remoteProducts = await fetchStorefrontProducts();
+    if (remoteProducts.length) {
+      setStoreProducts(remoteProducts);
+    }
+    return remoteProducts;
+  };
+
+  const navigateToRoute = (route) => {
+    if (route === "home") {
+      window.history.pushState(null, "", import.meta.env.BASE_URL || "/");
+      setCurrentRoute("home");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
+    window.location.hash = `#/${route}`;
+    setCurrentRoute(route);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   useEffect(() => {
     const timer = window.setInterval(
       () => setHeroIndex((index) => (index + 1) % heroSlides.length),
@@ -733,16 +910,40 @@ function App() {
     return () => window.clearInterval(timer);
   }, []);
 
+  useEffect(() => {
+    refreshStorefrontProducts();
+  }, []);
+
+  useEffect(() => {
+    if (storefrontMiniProducts.length <= 1) return undefined;
+    const timer = window.setInterval(() => {
+      setMiniShowcaseIndex(
+        (index) => (index + 1) % storefrontMiniProducts.length,
+      );
+    }, 3500);
+    return () => window.clearInterval(timer);
+  }, [storefrontMiniProducts.length]);
+
+  useEffect(() => {
+    const syncRoute = () => setCurrentRoute(getAppRoute());
+    window.addEventListener("hashchange", syncRoute);
+    window.addEventListener("popstate", syncRoute);
+    return () => {
+      window.removeEventListener("hashchange", syncRoute);
+      window.removeEventListener("popstate", syncRoute);
+    };
+  }, []);
+
   const filteredProducts = useMemo(
     () =>
       category === CATEGORY_ALL
-        ? products.filter(
+        ? storefrontProducts.filter(
             (product) =>
               product.category !== CATEGORY_REAL &&
               product.category !== CATEGORY_HOW,
           )
-        : products.filter((product) => product.category === category),
-    [category],
+        : storefrontProducts.filter((product) => product.category === category),
+    [category, storefrontProducts],
   );
 
   useEffect(() => {
@@ -776,23 +977,23 @@ function App() {
     ];
     return names
       .map((name) =>
-        products.find(
+        storefrontProducts.find(
           (product) =>
             product.category !== CATEGORY_REAL &&
             product.name.toLocaleLowerCase().includes(name.toLocaleLowerCase()),
         ),
       )
       .filter(Boolean);
-  }, []);
+  }, [storefrontProducts]);
 
   const featuredProducts = useMemo(
     () =>
       featuredCategory === "BEST SELLERS"
         ? bestSellers
-        : products.filter(
+        : storefrontProducts.filter(
             (product) => product.category === featuredCategory,
           ),
-    [bestSellers, featuredCategory],
+    [bestSellers, featuredCategory, storefrontProducts],
   );
   const featuredProductsFitInDesktop = featuredProducts.length <= 5;
 
@@ -1059,12 +1260,40 @@ function App() {
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
-  const activeHero = heroSlides[heroIndex];
-  const lookImages = lifestyleImages.slice(0, 4);
+  const activeHero = storefrontHeroSlides[heroIndex] ?? heroSlides[heroIndex];
+  const lookImages = storefrontLifestyleImages.slice(0, 4);
   const socialImages = [
-    ...lifestyleImages,
-    ...newMiniProducts.flatMap((product) => product.media.slice(0, 1)),
+    ...storefrontLifestyleImages,
+    ...storefrontNewMiniProducts.flatMap((product) => product.media.slice(0, 1)),
   ].slice(0, 8);
+  const miniShowcaseProducts = useMemo(() => {
+    if (!storefrontMiniProducts.length) return [];
+    return Array.from(
+      { length: Math.min(5, storefrontMiniProducts.length) },
+      (_, offset) =>
+        storefrontMiniProducts[
+          (miniShowcaseIndex + offset) % storefrontMiniProducts.length
+        ],
+    );
+  }, [miniShowcaseIndex, storefrontMiniProducts]);
+  const activeMiniShowcaseProduct = miniShowcaseProducts[0];
+  const nextMiniShowcase = () => {
+    if (!storefrontMiniProducts.length) return;
+    setMiniShowcaseIndex(
+      (index) => (index + 1) % storefrontMiniProducts.length,
+    );
+  };
+
+  if (isAdminRoute) {
+    return (
+      <AdminPanel
+        staticProducts={products}
+        onProductsChange={(nextProducts) =>
+          setStoreProducts(nextProducts?.length ? nextProducts : products)
+        }
+      />
+    );
+  }
 
   return (
     <div id="top">
@@ -1107,6 +1336,12 @@ function App() {
         </nav>
         <Logo />
         <nav className="main-nav main-nav-right">
+          <button
+            className={currentRoute === "products" ? "is-active" : ""}
+            onClick={() => navigateToRoute("products")}
+          >
+            ALL PRODUCTS
+          </button>
           <a href="#how-to">HOW TO</a>
           <a href="#real-looks">REAL LOOKS</a>
           <button onClick={() => setSearchOpen(true)} aria-label="ค้นหา">
@@ -1154,7 +1389,10 @@ function App() {
               onClick={() => selectCategory("New MINI Size")}
             >
               <img
-                src={newMiniProducts[0]?.media?.[1]?.src ?? newMiniProducts[0]?.image}
+                src={
+                  storefrontNewMiniProducts[0]?.media?.[1]?.src ??
+                  storefrontNewMiniProducts[0]?.image
+                }
                 alt=""
               />
               <span>
@@ -1193,6 +1431,15 @@ function App() {
               <ChevronRight />
             </button>
             ))}
+          <button
+            onClick={() => {
+              navigateToRoute("products");
+              setMobileMenuOpen(false);
+            }}
+          >
+            สินค้าทั้งหมด
+            <ChevronRight />
+          </button>
           <a href="#how-to" onClick={() => setMobileMenuOpen(false)}>
             HOW TO
           </a>
@@ -1204,7 +1451,7 @@ function App() {
 
       {searchOpen ? (
         <SearchOverlay
-          products={products}
+          products={storefrontProducts}
           onClose={() => setSearchOpen(false)}
           onAdd={addToCart}
         />
@@ -1213,7 +1460,7 @@ function App() {
       {cartOpen ? (
         <CartDrawer
           items={cart}
-          recommendations={newMiniProducts}
+          recommendations={storefrontNewMiniProducts}
           onClose={() => setCartOpen(false)}
           onIncrease={increaseItem}
           onDecrease={decreaseItem}
@@ -1224,11 +1471,20 @@ function App() {
         />
       ) : null}
 
+      {currentRoute === "products" ? (
+        <ProductListingPage
+          products={storefrontProducts}
+          activeCategory={category}
+          onCategoryChange={setCategory}
+          onAdd={addToCart}
+          onBackHome={() => navigateToRoute("home")}
+        />
+      ) : (
       <main>
         <section className={`hero hero-${activeHero.tone}`}>
           <img
             className="hero-atmosphere"
-            src={activeHero.image}
+            src={heroMiniSizeBackground}
             alt=""
             aria-hidden="true"
           />
@@ -1256,19 +1512,6 @@ function App() {
                 />
               ))}
             </div>
-          </div>
-          <div className="hero-products" aria-label="สินค้าแนะนำ">
-            {activeHero.products.map((product, index) => (
-              <img
-                key={`${activeHero.title}-${product.id}`}
-                className={`hero-product hero-product-${index + 1}`}
-                src={
-                  product.media?.find((item) => item.kind === "product")?.src ??
-                  product.image
-                }
-                alt={product.name}
-              />
-            ))}
           </div>
           <button
             className="hero-arrow hero-arrow-left"
@@ -1394,13 +1637,79 @@ function App() {
           </div>
         </section>
 
+        {activeMiniShowcaseProduct ? (
+          <section
+            className="mini-showcase"
+            style={{ "--series-color": getSeriesColor(activeMiniShowcaseProduct.name) }}
+          >
+            <div className="mini-showcase-copy">
+              <p>MINI SIZE ROTATION</p>
+              <h2>
+                Mini Size
+                <br />
+                ทุกลุค ทุกวัน
+              </h2>
+              <span>
+                โชว์ทุกรุ่นใน MINI Size แบบอัตโนมัติ รูปใหญ่จะสลับรุ่นไปเรื่อย ๆ
+                พร้อมกดเลื่อนเองได้
+              </span>
+              <button onClick={() => selectFeatured("MINI Size")}>
+                SHOP MINI SIZE <ArrowRight />
+              </button>
+            </div>
+            <div className="mini-showcase-stage" aria-label="MINI Size showcase">
+              <div className="mini-showcase-glow" />
+              {miniShowcaseProducts.map((product, index) => {
+                const media =
+                  product.media?.find((item) => item.kind === "product") ??
+                  product.media?.[0] ??
+                  { src: product.image, flip: false };
+                return (
+                  <button
+                    key={`${product.id}-${index}`}
+                    className={`mini-showcase-card mini-showcase-card-${index} ${
+                      index === 0 ? "is-active" : ""
+                    }`}
+                    onClick={() =>
+                      setMiniShowcaseIndex(
+                        storefrontMiniProducts.findIndex(
+                          (item) => item.id === product.id,
+                        ),
+                      )
+                    }
+                    aria-label={`ดูรุ่น ${product.name}`}
+                  >
+                    <img
+                      className={media.flip ? "is-flipped" : ""}
+                      src={media.src}
+                      alt={product.name}
+                      loading="lazy"
+                    />
+                    <span>
+                      <small>MINI SIZE</small>
+                      {product.name}
+                    </span>
+                  </button>
+                );
+              })}
+              <button
+                className="mini-showcase-next"
+                onClick={nextMiniShowcase}
+                aria-label="เลื่อนรุ่น MINI Size ถัดไป"
+              >
+                <ChevronRight />
+              </button>
+            </div>
+          </section>
+        ) : null}
+
         <section className="campaign-split">
           <div className="campaign-media">
             <img
               src={
-                lifestyleImages.find((product) =>
+                storefrontLifestyleImages.find((product) =>
                   /bangkok/i.test(product.name),
-                )?.image ?? lifestyleImages[0]?.image
+                )?.image ?? storefrontLifestyleImages[0]?.image
               }
               alt="Bangkok Babe real look"
               loading="lazy"
@@ -1446,7 +1755,7 @@ function App() {
           <ProductRail
             eyebrow="JUST LANDED"
             title="New Mini Series"
-            items={newMiniProducts}
+            items={storefrontNewMiniProducts}
             onAdd={addToCart}
             action={
               <button
@@ -1462,7 +1771,10 @@ function App() {
         <section className="how-to" id="how-to">
           <div className="how-media">
             <img
-              src={newMiniProducts[1]?.media?.[0]?.src ?? newMiniProducts[0]?.image}
+              src={
+                storefrontNewMiniProducts[1]?.media?.[0]?.src ??
+                storefrontNewMiniProducts[0]?.image
+              }
               alt="วิธีติดขนตา 2minBooBoo"
               loading="lazy"
             />
@@ -1607,6 +1919,7 @@ function App() {
           </div>
         </section>
       </main>
+      )}
 
       <footer>
         <div className="footer-newsletter">
