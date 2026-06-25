@@ -1873,6 +1873,19 @@ footer {
     grid-auto-columns: calc((100% - 30px) / 3);
   }
 
+  .explorer-rail {
+    grid-auto-columns: calc((100% - 36px) / 3);
+  }
+
+  .explorer-controls.is-short {
+    visibility: visible;
+  }
+
+  .explorer-rail.is-centered {
+    justify-content: start;
+    overflow-x: auto;
+  }
+
   .product-rail {
     grid-auto-columns: minmax(245px, 32%);
   }
@@ -2542,15 +2555,57 @@ footer {
   color: var(--orange);
 }
 
+.explorer-controls {
+  margin: -14px 0 18px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.explorer-controls.is-short {
+  visibility: hidden;
+}
+
+.explorer-arrow {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--orange);
+  background: var(--white);
+  color: var(--orange);
+  cursor: pointer;
+  transition: background .2s ease, color .2s ease, transform .2s ease;
+}
+
+.explorer-arrow:hover {
+  background: var(--orange);
+  color: var(--yellow);
+  transform: translateY(-2px);
+}
+
+.explorer-arrow svg {
+  width: 18px;
+  height: 18px;
+}
+
 .explorer-rail {
   display: grid;
   grid-auto-flow: column;
-  grid-auto-columns: minmax(245px, 1fr);
+  grid-auto-columns: calc((100% - 72px) / 5);
   gap: 18px;
   overflow-x: auto;
   overscroll-behavior-inline: contain;
   scroll-snap-type: inline mandatory;
   scrollbar-width: none;
+  cursor: grab;
+  touch-action: pan-y;
+  user-select: none;
+}
+
+.explorer-rail.is-centered {
+  justify-content: center;
+  overflow-x: hidden;
 }
 
 .explorer-rail::-webkit-scrollbar {
@@ -2558,10 +2613,22 @@ footer {
 }
 
 .explorer-rail .product-card {
-  min-width: 245px;
+  min-width: 0;
   scroll-snap-align: start;
   border: 1px solid var(--line);
   background: var(--white);
+}
+
+.explorer-rail.is-dragging,
+.explorer-rail.is-button-scrolling {
+  cursor: grabbing;
+  scroll-behavior: auto;
+  scroll-snap-type: none;
+}
+
+.explorer-rail img {
+  -webkit-user-drag: none;
+  user-select: none;
 }
 
 .explorer-rail .product-action button {

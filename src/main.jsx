@@ -706,7 +706,15 @@ function App() {
   const [megaOpen, setMegaOpen] = useState(false);
   const [heroIndex, setHeroIndex] = useState(0);
   const [featuredCategory, setFeaturedCategory] = useState("New MINI Size");
+  const featuredRailRef = useRef(null);
   const catalogRailRef = useRef(null);
+  const featuredDragRef = useRef({
+    isDragging: false,
+    pointerId: null,
+    startX: 0,
+    scrollLeft: 0,
+    hasDragged: false,
+  });
   const catalogDragRef = useRef({
     isDragging: false,
     pointerId: null,
@@ -714,6 +722,7 @@ function App() {
     scrollLeft: 0,
     hasDragged: false,
   });
+  const featuredScrollAnimationRef = useRef(null);
   const catalogScrollAnimationRef = useRef(null);
 
   useEffect(() => {
@@ -740,8 +749,15 @@ function App() {
     catalogRailRef.current?.scrollTo({ left: 0, behavior: "smooth" });
   }, [category]);
 
+  useEffect(() => {
+    featuredRailRef.current?.scrollTo({ left: 0, behavior: "smooth" });
+  }, [featuredCategory]);
+
   useEffect(
     () => () => {
+      if (featuredScrollAnimationRef.current) {
+        window.cancelAnimationFrame(featuredScrollAnimationRef.current);
+      }
       if (catalogScrollAnimationRef.current) {
         window.cancelAnimationFrame(catalogScrollAnimationRef.current);
       }
@@ -778,6 +794,7 @@ function App() {
           ),
     [bestSellers, featuredCategory],
   );
+  const featuredProductsFitInDesktop = featuredProducts.length <= 5;
 
   const cartCount = cart.reduce(
     (total, item) => total + item.quantity,
@@ -867,6 +884,110 @@ function App() {
 
     catalogScrollAnimationRef.current =
       window.requestAnimationFrame(animate);
+  };
+
+  const scrollFeatured = (direction) => {
+    const rail = featuredRailRef.current;
+    if (!rail) return;
+
+    if (featuredScrollAnimationRef.current) {
+      window.cancelAnimationFrame(featuredScrollAnimationRef.current);
+    }
+
+    const startLeft = rail.scrollLeft;
+    const maxLeft = rail.scrollWidth - rail.clientWidth;
+    const targetLeft = Math.max(
+      0,
+      Math.min(maxLeft, startLeft + direction * rail.clientWidth * 0.9),
+    );
+    const duration = 850;
+    const startTime = window.performance.now();
+    const easeInOutCubic = (progress) =>
+      progress < 0.5
+        ? 4 * progress * progress * progress
+        : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+
+    rail.classList.add("is-button-scrolling");
+
+    const animate = (now) => {
+      const progress = Math.min((now - startTime) / duration, 1);
+      rail.scrollLeft =
+        startLeft + (targetLeft - startLeft) * easeInOutCubic(progress);
+
+      if (progress < 1) {
+        featuredScrollAnimationRef.current =
+          window.requestAnimationFrame(animate);
+        return;
+      }
+
+      rail.scrollLeft = targetLeft;
+      rail.classList.remove("is-button-scrolling");
+      featuredScrollAnimationRef.current = null;
+    };
+
+    featuredScrollAnimationRef.current =
+      window.requestAnimationFrame(animate);
+  };
+
+  const handleFeaturedPointerDown = (event) => {
+    const rail = featuredRailRef.current;
+    if (!rail || (event.pointerType === "mouse" && event.button !== 0)) return;
+
+    if (featuredScrollAnimationRef.current) {
+      window.cancelAnimationFrame(featuredScrollAnimationRef.current);
+      featuredScrollAnimationRef.current = null;
+      rail.classList.remove("is-button-scrolling");
+    }
+
+    featuredDragRef.current = {
+      isDragging: true,
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      scrollLeft: rail.scrollLeft,
+      hasDragged: false,
+    };
+    rail.classList.add("is-dragging");
+  };
+
+  const handleFeaturedPointerMove = (event) => {
+    const rail = featuredRailRef.current;
+    const drag = featuredDragRef.current;
+    if (!rail || !drag.isDragging || drag.pointerId !== event.pointerId) return;
+
+    const distance = event.clientX - drag.startX;
+    if (Math.abs(distance) > 5) {
+      drag.hasDragged = true;
+      event.preventDefault();
+      if (!event.currentTarget.hasPointerCapture?.(event.pointerId)) {
+        event.currentTarget.setPointerCapture?.(event.pointerId);
+      }
+    }
+    rail.scrollLeft = drag.scrollLeft - distance;
+  };
+
+  const stopFeaturedDrag = (event) => {
+    const rail = featuredRailRef.current;
+    const drag = featuredDragRef.current;
+    if (!drag.isDragging || drag.pointerId !== event.pointerId) return;
+
+    if (event.currentTarget.hasPointerCapture?.(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    drag.isDragging = false;
+    drag.pointerId = null;
+    rail?.classList.remove("is-dragging");
+
+    window.setTimeout(() => {
+      featuredDragRef.current.hasDragged = false;
+    }, 160);
+  };
+
+  const handleFeaturedClickCapture = (event) => {
+    if (!featuredDragRef.current.hasDragged) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    featuredDragRef.current.hasDragged = false;
   };
 
   const handleCatalogPointerDown = (event) => {
@@ -1213,8 +1334,41 @@ function App() {
               </button>
             ))}
           </div>
-          <div className="explorer-rail">
-            {featuredProducts.slice(0, 6).map((product) => (
+          <div
+            className={`explorer-controls ${
+              featuredProductsFitInDesktop ? "is-short" : ""
+            }`}
+          >
+            <button
+              className="explorer-arrow"
+              onClick={() => scrollFeatured(-1)}
+              aria-label="เลื่อน Explore Our Lashes ไปทางซ้าย"
+            >
+              <ChevronLeft />
+            </button>
+            <button
+              className="explorer-arrow"
+              onClick={() => scrollFeatured(1)}
+              aria-label="เลื่อน Explore Our Lashes ไปทางขวา"
+            >
+              <ChevronRight />
+            </button>
+          </div>
+          <div
+            className={`explorer-rail ${
+              featuredProductsFitInDesktop ? "is-centered" : ""
+            }`}
+            ref={featuredRailRef}
+            aria-label="Explore Our Lashes เลื่อนได้ซ้ายขวา"
+            onPointerDown={handleFeaturedPointerDown}
+            onPointerMove={handleFeaturedPointerMove}
+            onPointerUp={stopFeaturedDrag}
+            onPointerCancel={stopFeaturedDrag}
+            onPointerLeave={stopFeaturedDrag}
+            onClickCapture={handleFeaturedClickCapture}
+            onDragStart={(event) => event.preventDefault()}
+          >
+            {featuredProducts.map((product) => (
               <ProductCard
                 key={product.id}
                 product={product}
