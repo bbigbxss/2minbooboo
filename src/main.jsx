@@ -119,6 +119,7 @@ const seriesDetails = {
 const prettify = (value) =>
   value
     .replace(/\.(png|jpe?g|webp)$/i, "")
+    .replace(/^somgkran(\s+\d{1,2})?$/i, "songkran$1")
     .replace(/^tv\s*(\d+)$/i, "Travel Lash $1")
     .replace(/\s+/g, " ")
     .trim();
@@ -720,21 +721,21 @@ function ProductSystemSection({
     {
       key: "mini",
       label: "Mini Size",
-      note: "ทดลองสไตล์ / ดึงลูกค้าใหม่",
+      note: "กล่องเล็ก",
       products: miniItems,
       category: "MINI Size",
     },
     {
       key: "medium",
       label: "Medium Size",
-      note: "กล่องกลาง / ใช้ง่ายทุกวัน",
+      note: "กล่องกลาง",
       products: mediumItems,
       category: CATEGORY_MEDIUM,
     },
     {
       key: "full",
       label: "Big Size",
-      note: "อัปเกรดสำหรับผู้ใช้ประจำ",
+      note: "กล่องใหญ่",
       products: fullItems,
       category: CATEGORY_FULL,
     },
@@ -744,7 +745,7 @@ function ProductSystemSection({
     <section className="product-system" id="product-system">
       <div className="product-system-head">
         <div>
-          <h2>Mini, Medium & Big Size</h2>
+          <h2>ALL SIZE</h2>
         </div>
       </div>
 
@@ -1635,6 +1636,7 @@ function App() {
             SHOP <ChevronDown size={14} />
           </button>
           <button onClick={() => selectFeatured("MINI Size")}>MINI SIZE</button>
+          <button onClick={() => selectFeatured(CATEGORY_MEDIUM)}>MEDIUM SIZE</button>
           <button onClick={() => selectFeatured("Travelsize")}>TRAVEL SIZE</button>
           <button onClick={() => selectFeatured(CATEGORY_FULL)}>FULL SIZE</button>
         </nav>
@@ -1960,15 +1962,11 @@ function App() {
             style={{ "--series-color": getSeriesColor(activeMiniShowcaseProduct.name) }}
           >
             <div className="mini-showcase-copy">
-              <p>MINI SIZE ROTATION</p>
               <h2>
                 Mini Size
                 <br />
-                ทุกลุค ทุกวัน
               </h2>
               <span>
-                โชว์ทุกรุ่นใน MINI Size แบบอัตโนมัติ รูปใหญ่จะสลับรุ่นไปเรื่อย ๆ
-                พร้อมกดเลื่อนเองได้
               </span>
               <button onClick={() => selectFeatured("MINI Size")}>
                 SHOP MINI SIZE <ArrowRight />
