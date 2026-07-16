@@ -23,7 +23,6 @@ import {
   ShoppingBag,
   Sparkles,
   Star,
-  WandSparkles,
   X,
   ZoomIn,
 } from "lucide-react";
@@ -47,6 +46,7 @@ const productModules = import.meta.glob(
 );
 
 const CATEGORY_ALL = "ทั้งหมด";
+const CATEGORY_MEDIUM = "Medium Size";
 const CATEGORY_FULL = "กล่องใหญ่";
 const CATEGORY_SINGLE = "ขนตาเดี่ยว";
 const CATEGORY_REAL = "คนใส่จริง";
@@ -55,10 +55,9 @@ const CATEGORY_HOW = "แบบใส่ก้าน";
 const categoryOrder = [
   CATEGORY_ALL,
   "MINI Size",
-  "New MINI Size",
   "Travelsize",
+  CATEGORY_MEDIUM,
   CATEGORY_FULL,
-  CATEGORY_SINGLE,
   CATEGORY_REAL,
   CATEGORY_HOW,
 ];
@@ -66,20 +65,18 @@ const categoryOrder = [
 const categoryLabels = {
   [CATEGORY_ALL]: "ALL",
   "MINI Size": "MINI SIZE",
-  "New MINI Size": "NEW MINI",
   Travelsize: "TRAVEL SIZE",
+  [CATEGORY_MEDIUM]: "MEDIUM SIZE",
   [CATEGORY_FULL]: "FULL SIZE",
-  [CATEGORY_SINGLE]: "LASH STYLES",
   [CATEGORY_REAL]: "REAL LOOKS",
   [CATEGORY_HOW]: "HOW TO",
 };
 
 const categoryPrices = {
   "MINI Size": 189,
-  "New MINI Size": 229,
   Travelsize: 259,
+  [CATEGORY_MEDIUM]: 299,
   [CATEGORY_FULL]: 349,
-  [CATEGORY_SINGLE]: 199,
   [CATEGORY_REAL]: 229,
   [CATEGORY_HOW]: 159,
 };
@@ -127,22 +124,28 @@ const prettify = (value) =>
     .trim();
 
 const getImagePresentation = (path, category, file) => {
-  const isNewMiniEye =
-    category === "New MINI Size" &&
-    !/\d{1,2}\.(?:png|jpe?g|webp)$/i.test(file);
-  const isEye = category === CATEGORY_REAL || isNewMiniEye;
-  const flip =
-    (isNewMiniEye &&
-      /(?:^|\/)(?:dahlia|sakura แบบสั้น)\.(?:png|jpe?g|webp)$/i.test(path)) ||
-    /(?:^|\/)orchid02\.(?:png|jpe?g|webp)$/i.test(path);
+  const isEye = category === CATEGORY_REAL;
+  const flip = /(?:^|\/)orchid02\.(?:png|jpe?g|webp)$/i.test(path);
   return { kind: isEye ? "eye" : "product", flip };
+};
+
+const mediumSizeProductPattern =
+  /(?:barbie\s*doll|sakura|somgkran|songkran|moonlight)/i;
+
+const getProductCategory = (category, file) => {
+  if (category === CATEGORY_FULL && mediumSizeProductPattern.test(file)) {
+    return CATEGORY_MEDIUM;
+  }
+
+  return category;
 };
 
 const rawProducts = Object.entries(productModules).map(
   ([path, image], index) => {
     const parts = path.split("/");
-    const category = parts.at(-2);
+    const originalCategory = parts.at(-2);
     const file = parts.at(-1);
+    const category = getProductCategory(originalCategory, file);
     const name = prettify(file) || `2minBooBoo Lash ${index + 1}`;
     return {
       id: `${category}-${file}-${index}`,
@@ -152,12 +155,12 @@ const rawProducts = Object.entries(productModules).map(
       media: [{ src: image, ...getImagePresentation(path, category, file) }],
       name,
       price: categoryPrices[category] ?? 229,
-      isNew: category === "New MINI Size" || index % 13 === 0,
+      isNew: index % 13 === 0,
     };
   },
 );
 
-const groupableCategories = new Set(["New MINI Size", CATEGORY_FULL]);
+const groupableCategories = new Set([CATEGORY_MEDIUM, CATEGORY_FULL]);
 const productGroups = new Map();
 const products = [];
 
@@ -282,9 +285,6 @@ const lifestyleImages = products.filter(
 const miniProducts = products.filter(
   (product) => product.category === "MINI Size",
 );
-const newMiniProducts = products.filter(
-  (product) => product.category === "New MINI Size",
-);
 const fullSizeProducts = products.filter(
   (product) => product.category === CATEGORY_FULL,
 );
@@ -299,35 +299,35 @@ const heroSlides = [
       lifestyleImages.find((product) => /california/i.test(product.name))
         ?.image ?? lifestyleImages[0]?.image,
     products: [
-      newMiniProducts[0],
       miniProducts[0],
       fullSizeProducts[0],
-      newMiniProducts[1],
+      miniProducts[1],
+      miniProducts[2],
     ].filter(Boolean),
     tone: "peach",
   },
   {
-    eyebrow: "NEW MINI SERIES",
+    eyebrow: "MINI SIZE SERIES",
     title: "ลุคใหม่\nพร้อมติดทันที",
     body: "ช่อขนตาน้ำหนักเบา เรียงง่าย ติดแน่น พร้อมออกจากบ้านภายใน 2 นาที",
-    cta: "DISCOVER NEW MINI",
+    cta: "SHOP MINI SIZE",
     image:
       lifestyleImages.find((product) => /hollywood/i.test(product.name))
         ?.image ?? lifestyleImages[1]?.image,
     products: [
-      newMiniProducts[1],
-      newMiniProducts[2],
       miniProducts[1],
       fullSizeProducts[1],
+      miniProducts[3],
+      miniProducts[4],
     ].filter(Boolean),
     tone: "sunset",
   },
 ];
 
 const exploreCategories = [
-  { label: "NEW MINI", value: "New MINI Size" },
   { label: "MINI SIZE", value: "MINI Size" },
   { label: "TRAVEL SIZE", value: "Travelsize" },
+  { label: "MEDIUM SIZE", value: CATEGORY_MEDIUM },
   { label: "FULL SIZE", value: CATEGORY_FULL },
   { label: "BEST SELLERS", value: "BEST SELLERS" },
 ];
@@ -414,16 +414,16 @@ const categoryTiles = [
     icon: Sparkles,
   },
   {
-    label: "NEW MINI",
-    note: "ทรงใหม่ล่าสุด",
-    category: "New MINI Size",
-    icon: WandSparkles,
-  },
-  {
     label: "TRAVEL SIZE",
     note: "พกไปได้ทุกที่",
     category: "Travelsize",
     icon: Package,
+  },
+  {
+    label: "MEDIUM SIZE",
+    note: "กล่องกลาง ใช้ง่าย",
+    category: CATEGORY_MEDIUM,
+    icon: Gift,
   },
   {
     label: "FULL SIZE",
@@ -679,7 +679,8 @@ function ProductSystemCard({ product, tier, index }) {
     { src: product.image, flip: false };
   const meta = getProductSystemMeta(product.name);
   const fallbackMedia = getProductFallbackMedia(product, 0);
-  const isFeatured = tier === "mini" && index < 3;
+  const isFeatured =
+    tier === "mini" && /flora|dahlia|orchid/i.test(product.name);
 
   return (
     <article className={`system-product-card ${isFeatured ? "is-featured" : ""}`}>
@@ -703,35 +704,36 @@ function ProductSystemCard({ product, tier, index }) {
           <span>{product.name.toLocaleUpperCase()}</span>
         </h3>
         <p>{meta.style}</p>
-        <div className="system-product-tags">
-          <span>{meta.role}</span>
-          <i>{"★".repeat(meta.stars)}</i>
-        </div>
         <small>{meta.scene}</small>
       </div>
     </article>
   );
 }
 
-function ProductSystemSection({ miniItems, mediumItems, fullItems, onSelectCategory }) {
+function ProductSystemSection({
+  miniItems,
+  mediumItems,
+  fullItems,
+  onSelectCategory,
+}) {
   const groups = [
     {
       key: "mini",
-      label: "① Mini Size · 11 แบบ",
+      label: "Mini Size",
       note: "ทดลองสไตล์ / ดึงลูกค้าใหม่",
       products: miniItems,
-      category: "New MINI Size",
+      category: "MINI Size",
     },
     {
       key: "medium",
-      label: "② กล่องกลาง · 4 แบบ",
-      note: "ซื้อซ้ำในชีวิตประจำวัน",
+      label: "Medium Size",
+      note: "กล่องกลาง / ใช้ง่ายทุกวัน",
       products: mediumItems,
-      category: CATEGORY_SINGLE,
+      category: CATEGORY_MEDIUM,
     },
     {
       key: "full",
-      label: "③ กล่องใหญ่ · 4 แบบ",
+      label: "Big Size",
       note: "อัปเกรดสำหรับผู้ใช้ประจำ",
       products: fullItems,
       category: CATEGORY_FULL,
@@ -742,23 +744,8 @@ function ProductSystemSection({ miniItems, mediumItems, fullItems, onSelectCateg
     <section className="product-system" id="product-system">
       <div className="product-system-head">
         <div>
-          <p>
-            <span>P08</span> ระบบผลิตภัณฑ์
-          </p>
-          <h2>ไลน์ขนตาครบทั้ง Mini กล่องกลาง และกล่องใหญ่</h2>
+          <h2>Mini, Medium & Big Size</h2>
         </div>
-        <span>
-          Mini ช่วยให้ลูกค้าทดลองสไตล์ได้ง่าย กล่องกลางรองรับการซื้อซ้ำ
-          และกล่องใหญ่ตอบโจทย์ผู้ใช้ประจำ
-        </span>
-      </div>
-
-      <div className="product-system-ladder">
-        <span>Mini · 11 แบบ</span>
-        <i>→</i>
-        <span>กล่องกลาง · 4 แบบ</span>
-        <i>→</i>
-        <span>กล่องใหญ่ · 4 แบบ</span>
       </div>
 
       {groups.map((group) => (
@@ -1094,7 +1081,7 @@ function App() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [megaOpen, setMegaOpen] = useState(false);
   const [heroIndex, setHeroIndex] = useState(0);
-  const [featuredCategory, setFeaturedCategory] = useState("New MINI Size");
+  const [featuredCategory, setFeaturedCategory] = useState("MINI Size");
   const [miniShowcaseIndex, setMiniShowcaseIndex] = useState(0);
   const [storeProducts, setStoreProducts] = useState(products);
   const featuredRailRef = useRef(null);
@@ -1116,7 +1103,13 @@ function App() {
   const featuredScrollAnimationRef = useRef(null);
   const catalogScrollAnimationRef = useRef(null);
 
-  const storefrontProducts = storeProducts.length ? storeProducts : products;
+  const storefrontProducts = useMemo(
+    () =>
+      (storeProducts.length ? storeProducts : products).filter(
+        (product) => product.category !== CATEGORY_SINGLE,
+      ),
+    [storeProducts],
+  );
   const storefrontLifestyleImages = useMemo(
     () =>
       storefrontProducts.filter(
@@ -1127,13 +1120,6 @@ function App() {
   const storefrontMiniProducts = useMemo(
     () =>
       storefrontProducts.filter((product) => product.category === "MINI Size"),
-    [storefrontProducts],
-  );
-  const storefrontNewMiniProducts = useMemo(
-    () =>
-      storefrontProducts.filter(
-        (product) => product.category === "New MINI Size",
-      ),
     [storefrontProducts],
   );
   const storefrontFullSizeProducts = useMemo(
@@ -1156,23 +1142,22 @@ function App() {
         products:
           index === 0
             ? [
-                storefrontNewMiniProducts[0],
                 storefrontMiniProducts[0],
                 storefrontFullSizeProducts[0],
-                storefrontNewMiniProducts[1],
+                storefrontMiniProducts[1],
+                storefrontMiniProducts[2],
               ].filter(Boolean)
             : [
-                storefrontNewMiniProducts[1],
-                storefrontNewMiniProducts[2],
                 storefrontMiniProducts[1],
                 storefrontFullSizeProducts[1],
+                storefrontMiniProducts[3],
+                storefrontMiniProducts[4],
               ].filter(Boolean),
       })),
     [
       storefrontFullSizeProducts,
       storefrontLifestyleImages,
       storefrontMiniProducts,
-      storefrontNewMiniProducts,
     ],
   );
 
@@ -1334,9 +1319,8 @@ function App() {
   const selectCategory = (nextCategory) => {
     setCategory(nextCategory);
     setMegaOpen(false);
-    document
-      .getElementById("all-products")
-      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    setMobileMenuOpen(false);
+    navigateToRoute("products");
   };
 
   const scrollCatalog = (direction) => {
@@ -1559,7 +1543,7 @@ function App() {
   const lookImages = storefrontLifestyleImages.slice(0, 4);
   const socialImages = [
     ...storefrontLifestyleImages,
-    ...storefrontNewMiniProducts.flatMap((product) => product.media.slice(0, 1)),
+    ...storefrontMiniProducts.flatMap((product) => product.media.slice(0, 1)),
   ].slice(0, 8);
   const miniShowcaseProducts = useMemo(() => {
     if (!storefrontMiniProducts.length) return [];
@@ -1573,29 +1557,29 @@ function App() {
   }, [miniShowcaseIndex, storefrontMiniProducts]);
   const activeMiniShowcaseProduct = miniShowcaseProducts[0];
   const productSystemMiniProducts = useMemo(() => {
-    const newMiniPriority = ["flora", "dahlia", "orchid", "sakura"];
-    const sortedNewMini = [...newMiniProducts].sort((a, b) => {
-      const aIndex = newMiniPriority.findIndex((item) =>
+    const miniPriority = ["flora", "dahlia", "orchid"];
+    const sortedMini = [...miniProducts].sort((a, b) => {
+      const aIndex = miniPriority.findIndex((item) =>
         a.name.toLocaleLowerCase().includes(item),
       );
-      const bIndex = newMiniPriority.findIndex((item) =>
+      const bIndex = miniPriority.findIndex((item) =>
         b.name.toLocaleLowerCase().includes(item),
       );
 
       return (aIndex === -1 ? 99 : aIndex) - (bIndex === -1 ? 99 : bIndex);
     });
 
-    return [...sortedNewMini, ...miniProducts].slice(0, 11);
+    return sortedMini.slice(0, 11);
   }, []);
+  const productSystemFullProducts = useMemo(
+    () => fullSizeProducts.slice(0, 4),
+    [],
+  );
   const productSystemMediumProducts = useMemo(
     () =>
       products
-        .filter((product) => product.category === CATEGORY_SINGLE)
+        .filter((product) => product.category === CATEGORY_MEDIUM)
         .slice(0, 4),
-    [],
-  );
-  const productSystemFullProducts = useMemo(
-    () => fullSizeProducts.slice(0, 4),
     [],
   );
   const nextMiniShowcase = () => {
@@ -1626,7 +1610,7 @@ function App() {
               <i>★</i>
               <span>2 กล่อง ลดเพิ่ม 10%</span>
               <i>★</i>
-              <span>NEW MINI SERIES มาใหม่!</span>
+              <span>MINI SIZE เพิ่มรุ่นใหม่!</span>
               <i>★</i>
               <span>ขนตาสวยใน 2 นาที</span>
               <i>★</i>
@@ -1650,7 +1634,6 @@ function App() {
           >
             SHOP <ChevronDown size={14} />
           </button>
-          <button onClick={() => selectFeatured("New MINI Size")}>NEW MINI</button>
           <button onClick={() => selectFeatured("MINI Size")}>MINI SIZE</button>
           <button onClick={() => selectFeatured("Travelsize")}>TRAVEL SIZE</button>
           <button onClick={() => selectFeatured(CATEGORY_FULL)}>FULL SIZE</button>
@@ -1699,7 +1682,14 @@ function App() {
               <span>SHOP BY STYLE</span>
               {["Sakura", "Blooming", "Moonlight", "Bangkok Babe"].map(
                 (name) => (
-                  <a key={name} href="#all-products">
+                  <a
+                    key={name}
+                    href="#/products"
+                    onClick={() => {
+                      setMegaOpen(false);
+                      navigateToRoute("products");
+                    }}
+                  >
                     {name}
                   </a>
                 ),
@@ -1707,24 +1697,24 @@ function App() {
             </div>
             <button
               className="mega-feature"
-              onClick={() => selectCategory("New MINI Size")}
+              onClick={() => selectCategory("MINI Size")}
             >
               <img
                 src={
-                  storefrontNewMiniProducts[0]?.media?.[1]?.src ??
-                  storefrontNewMiniProducts[0]?.image
+                  storefrontMiniProducts[0]?.media?.[0]?.src ??
+                  storefrontMiniProducts[0]?.image
                 }
                 alt=""
                 onError={(event) =>
                   swapBrokenImageToFallback(
                     event,
-                    getProductFallbackMedia(storefrontNewMiniProducts[0], 1)?.src,
+                    getProductFallbackMedia(storefrontMiniProducts[0], 0)?.src,
                   )
                 }
               />
               <span>
-                NEW MINI SERIES
-                <small>ดูคอลเลกชันใหม่</small>
+                MINI SIZE SERIES
+                <small>ดูคอลเลกชันมินิ</small>
               </span>
             </button>
           </div>
@@ -1787,7 +1777,7 @@ function App() {
       {cartOpen ? (
         <CartDrawer
           items={cart}
-          recommendations={storefrontNewMiniProducts}
+          recommendations={storefrontMiniProducts}
           onClose={() => setCartOpen(false)}
           onIncrease={increaseItem}
           onDecrease={decreaseItem}
@@ -2105,29 +2095,12 @@ function App() {
           </div>
         </section>
 
-        <div id="new-arrivals">
-          <ProductRail
-            eyebrow="JUST LANDED"
-            title="New Mini Series"
-            items={storefrontNewMiniProducts}
-            onAdd={addToCart}
-            action={
-              <button
-                className="text-link"
-                onClick={() => selectCategory("New MINI Size")}
-              >
-                ดูทั้งหมด <ArrowRight size={15} />
-              </button>
-            }
-          />
-        </div>
-
         <section className="how-to" id="how-to">
           <div className="how-media">
             <img
               src={
-                storefrontNewMiniProducts[1]?.media?.[0]?.src ??
-                storefrontNewMiniProducts[0]?.image
+                storefrontMiniProducts[1]?.media?.[0]?.src ??
+                storefrontMiniProducts[0]?.image
               }
               alt="วิธีติดขนตา 2minBooBoo"
               loading="lazy"
@@ -2135,7 +2108,7 @@ function App() {
                 swapBrokenImageToFallback(
                   event,
                   getProductFallbackMedia(
-                    storefrontNewMiniProducts[1] ?? storefrontNewMiniProducts[0],
+                    storefrontMiniProducts[1] ?? storefrontMiniProducts[0],
                     0,
                   )?.src,
                 )
@@ -2162,7 +2135,13 @@ function App() {
                 <Check />
               </article>
             ))}
-            <a href="#all-products">
+            <a
+              href="#/products"
+              onClick={(event) => {
+                event.preventDefault();
+                navigateToRoute("products");
+              }}
+            >
               เริ่มเลือกทรงของคุณ <ArrowRight />
             </a>
           </div>
@@ -2189,85 +2168,6 @@ function App() {
           fullItems={productSystemFullProducts}
           onSelectCategory={selectCategory}
         />
-
-        <section className="all-products" id="all-products">
-          <div className="section-centered-title">
-            <p>THE FULL COLLECTION</p>
-            <h2>2minBooBoo</h2>
-          </div>
-          <div className="category-tabs" role="tablist">
-            {categoryOrder.map((item) => (
-              <button
-                key={item}
-                className={category === item ? "is-active" : ""}
-                onClick={() => setCategory(item)}
-                role="tab"
-                aria-selected={category === item}
-              >
-                {categoryLabels[item]}
-              </button>
-            ))}
-          </div>
-          <div className="collection-toolbar">
-            <span>
-              {category === CATEGORY_ALL
-                ? "แสดงสินค้าทั้งหมด"
-                : `กำลังดู ${categoryLabels[category]}`}
-            </span>
-            <div className="collection-actions">
-              {category !== CATEGORY_ALL ? (
-                <button
-                  className="collection-show-all"
-                  onClick={() => setCategory(CATEGORY_ALL)}
-                >
-                  ดูทั้งหมด
-                </button>
-              ) : null}
-              <button
-                className="catalog-arrow"
-                onClick={() => scrollCatalog(-1)}
-                aria-label="เลื่อนสินค้าไปทางซ้าย"
-              >
-                <ChevronLeft />
-              </button>
-              <button
-                className="catalog-arrow"
-                onClick={() => scrollCatalog(1)}
-                aria-label="เลื่อนสินค้าไปทางขวา"
-              >
-                <ChevronRight />
-              </button>
-            </div>
-          </div>
-          <div
-            className="catalog-carousel"
-            ref={catalogRailRef}
-            aria-label="รายการสินค้า เลื่อนได้ซ้ายขวา"
-            onPointerDown={handleCatalogPointerDown}
-            onPointerMove={handleCatalogPointerMove}
-            onPointerUp={stopCatalogDrag}
-            onPointerCancel={stopCatalogDrag}
-            onPointerLeave={stopCatalogDrag}
-            onClickCapture={handleCatalogClickCapture}
-            onDragStart={(event) => event.preventDefault()}
-          >
-            {filteredProducts.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                onAdd={addToCart}
-              />
-            ))}
-          </div>
-          {filteredProducts.length === 0 ? (
-            <button
-              className="load-more"
-              onClick={() => setCategory(CATEGORY_ALL)}
-            >
-              ดูสินค้าทั้งหมด
-            </button>
-          ) : null}
-        </section>
 
         <section className="social-section">
           <div className="section-centered-title">
@@ -2316,8 +2216,8 @@ function App() {
           <div>
             <h3>SHOP</h3>
             <a href="#best-sellers">Best Sellers</a>
-            <a href="#new-arrivals">New Mini</a>
-            <a href="#all-products">All Lashes</a>
+            <a href="#product-system">Mini Size</a>
+            <a href="#/products">All Lashes</a>
           </div>
           <div>
             <h3>HELP</h3>
