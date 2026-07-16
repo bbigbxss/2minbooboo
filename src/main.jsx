@@ -339,6 +339,73 @@ const marqueeMessages = [
   "2MINBOOBOO",
 ];
 
+const productSystemMeta = {
+  flora: {
+    style: "หวานละมุน · เบาสบาย",
+    role: "ดึงลูกค้า",
+    scene: "เดต / คาเฟ่ / แต่งหน้าเบา ๆ",
+    stars: 3,
+  },
+  dahlia: {
+    style: "เป็นธรรมชาติ ดูโดดเด่น · รุ่นแนะนำ",
+    role: "รุ่นทำกำไรหลัก",
+    scene: "ไปทำงาน / เดต / ใช้ได้ทุกโอกาส",
+    stars: 4,
+  },
+  orchid: {
+    style: "ลุคใส เรียบร้อย · เป็นธรรมชาติ",
+    role: "ดึงลูกค้า",
+    scene: "เรียน / สัมภาษณ์งาน / พบผู้ใหญ่",
+    stars: 2,
+  },
+  sakura: {
+    style: "รุ่นเด่นของแบรนด์ · เป็นธรรมชาติสูง",
+    role: "ดึงลูกค้า",
+    scene: "ทุกวัน / ไปเรียน / ทำงาน",
+    stars: 4,
+  },
+  blooming: {
+    style: "ละมุน สดใส · ใช้ง่ายทุกวัน",
+    role: "ซื้อซ้ำง่าย",
+    scene: "คาเฟ่ / เดต / วันสบาย ๆ",
+    stars: 4,
+  },
+  moonlight: {
+    style: "คมขึ้นแต่ยังนุ่ม · ลุคกลางคืน",
+    role: "อัปเกรดลุค",
+    scene: "ดินเนอร์ / งานกลางคืน",
+    stars: 4,
+  },
+  hollywood: {
+    style: "เด่น ชัด ถ่ายรูปขึ้น",
+    role: "เพิ่มบิล",
+    scene: "ปาร์ตี้ / ถ่ายคอนเทนต์",
+    stars: 5,
+  },
+  "bangkok babe": {
+    style: "คมหวาน · แต่งแล้วตาเปิด",
+    role: "ขายดี",
+    scene: "ทำงาน / ออกงาน / แต่งเต็ม",
+    stars: 5,
+  },
+};
+
+const getProductSystemMeta = (name = "") => {
+  const normalized = name.toLocaleLowerCase();
+  const key = Object.keys(productSystemMeta).find((item) =>
+    normalized.includes(item),
+  );
+
+  return (
+    productSystemMeta[key] ?? {
+      style: "สไตล์ใช้ง่าย · ติดไวใน 2 นาที",
+      role: "เติมไลน์สินค้า",
+      scene: "ใช้ได้ทุกวัน / ทดลองลุคใหม่",
+      stars: 3,
+    }
+  );
+};
+
 const categoryTiles = [
   {
     label: "MINI SIZE",
@@ -601,6 +668,122 @@ function ProductRail({ title, eyebrow, items, onAdd, action }) {
           <ProductCard key={product.id} product={product} onAdd={onAdd} compact />
         ))}
       </div>
+    </section>
+  );
+}
+
+function ProductSystemCard({ product, tier, index }) {
+  const media =
+    product.media?.find((item) => item.kind === "product") ??
+    product.media?.[0] ??
+    { src: product.image, flip: false };
+  const meta = getProductSystemMeta(product.name);
+  const fallbackMedia = getProductFallbackMedia(product, 0);
+  const isFeatured = tier === "mini" && index < 3;
+
+  return (
+    <article className={`system-product-card ${isFeatured ? "is-featured" : ""}`}>
+      {isFeatured ? (
+        <span className="system-product-limited">NEW · LIMITED EDITION</span>
+      ) : null}
+      <div className="system-product-image">
+        <img
+          className={media.flip ? "is-flipped" : ""}
+          src={media.src}
+          alt={product.name}
+          loading="lazy"
+          onError={(event) =>
+            swapBrokenImageToFallback(event, fallbackMedia?.src)
+          }
+        />
+      </div>
+      <div className="system-product-copy">
+        <h3>
+          {product.name}
+          <span>{product.name.toLocaleUpperCase()}</span>
+        </h3>
+        <p>{meta.style}</p>
+        <div className="system-product-tags">
+          <span>{meta.role}</span>
+          <i>{"★".repeat(meta.stars)}</i>
+        </div>
+        <small>{meta.scene}</small>
+      </div>
+    </article>
+  );
+}
+
+function ProductSystemSection({ miniItems, mediumItems, fullItems, onSelectCategory }) {
+  const groups = [
+    {
+      key: "mini",
+      label: "① Mini Size · 11 แบบ",
+      note: "ทดลองสไตล์ / ดึงลูกค้าใหม่",
+      products: miniItems,
+      category: "New MINI Size",
+    },
+    {
+      key: "medium",
+      label: "② กล่องกลาง · 4 แบบ",
+      note: "ซื้อซ้ำในชีวิตประจำวัน",
+      products: mediumItems,
+      category: CATEGORY_SINGLE,
+    },
+    {
+      key: "full",
+      label: "③ กล่องใหญ่ · 4 แบบ",
+      note: "อัปเกรดสำหรับผู้ใช้ประจำ",
+      products: fullItems,
+      category: CATEGORY_FULL,
+    },
+  ].filter((group) => group.products.length);
+
+  return (
+    <section className="product-system" id="product-system">
+      <div className="product-system-head">
+        <div>
+          <p>
+            <span>P08</span> ระบบผลิตภัณฑ์
+          </p>
+          <h2>ไลน์ขนตาครบทั้ง Mini กล่องกลาง และกล่องใหญ่</h2>
+        </div>
+        <span>
+          Mini ช่วยให้ลูกค้าทดลองสไตล์ได้ง่าย กล่องกลางรองรับการซื้อซ้ำ
+          และกล่องใหญ่ตอบโจทย์ผู้ใช้ประจำ
+        </span>
+      </div>
+
+      <div className="product-system-ladder">
+        <span>Mini · 11 แบบ</span>
+        <i>→</i>
+        <span>กล่องกลาง · 4 แบบ</span>
+        <i>→</i>
+        <span>กล่องใหญ่ · 4 แบบ</span>
+      </div>
+
+      {groups.map((group) => (
+        <div className="product-system-group" key={group.key}>
+          <div className="product-system-subhead">
+            <div>
+              <strong>{group.label}</strong>
+              <small>{group.note}</small>
+            </div>
+            <button onClick={() => onSelectCategory(group.category)}>
+              ดูหมวดนี้ <ArrowRight size={15} />
+            </button>
+          </div>
+          <div className="product-system-grid">
+            {group.products.map((product, index) => (
+              <ProductSystemCard
+                key={`${group.key}-${product.id}`}
+                product={product}
+                tier={group.key}
+                index={index}
+              />
+            ))}
+          </div>
+        </div>
+      ))}
     </section>
   );
 }
@@ -1389,6 +1572,32 @@ function App() {
     );
   }, [miniShowcaseIndex, storefrontMiniProducts]);
   const activeMiniShowcaseProduct = miniShowcaseProducts[0];
+  const productSystemMiniProducts = useMemo(() => {
+    const newMiniPriority = ["flora", "dahlia", "orchid", "sakura"];
+    const sortedNewMini = [...newMiniProducts].sort((a, b) => {
+      const aIndex = newMiniPriority.findIndex((item) =>
+        a.name.toLocaleLowerCase().includes(item),
+      );
+      const bIndex = newMiniPriority.findIndex((item) =>
+        b.name.toLocaleLowerCase().includes(item),
+      );
+
+      return (aIndex === -1 ? 99 : aIndex) - (bIndex === -1 ? 99 : bIndex);
+    });
+
+    return [...sortedNewMini, ...miniProducts].slice(0, 11);
+  }, []);
+  const productSystemMediumProducts = useMemo(
+    () =>
+      products
+        .filter((product) => product.category === CATEGORY_SINGLE)
+        .slice(0, 4),
+    [],
+  );
+  const productSystemFullProducts = useMemo(
+    () => fullSizeProducts.slice(0, 4),
+    [],
+  );
   const nextMiniShowcase = () => {
     if (!storefrontMiniProducts.length) return;
     setMiniShowcaseIndex(
@@ -1973,6 +2182,13 @@ function App() {
             <Stars />
           </div>
         </section>
+
+        <ProductSystemSection
+          miniItems={productSystemMiniProducts}
+          mediumItems={productSystemMediumProducts}
+          fullItems={productSystemFullProducts}
+          onSelectCategory={selectCategory}
+        />
 
         <section className="all-products" id="all-products">
           <div className="section-centered-title">
