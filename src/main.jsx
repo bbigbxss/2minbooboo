@@ -27,7 +27,16 @@ import {
   ZoomIn,
 } from "lucide-react";
 import AdminPanel from "./AdminPanel.jsx";
-import heroMiniSizeBackground from "./assets/hero/mini-size-hero-bg.png";
+import heroWhiteLogo from "./assets/hero/hero-2minbooboo-logo-crop.png";
+import heroOrangeProducts from "./assets/hero/hero-lifestyle-orange.png";
+import bigBangkokBabeImage from "./assets/big-size-md/Bangkok Babe.png";
+import bigBloomingImage from "./assets/big-size-md/Blooming.png";
+import bigCaliforniaGirlImage from "./assets/big-size-md/California Girl.png";
+import bigHollywoodImage from "./assets/big-size-md/Hollywood.png";
+import mediumBarbieDollImage from "./assets/medium-size-md/Barbie Doll.png";
+import mediumMoonlightImage from "./assets/medium-size-md/Moonlight.png";
+import mediumSakuraImage from "./assets/medium-size-md/Sakura.png";
+import mediumSongkranImage from "./assets/medium-size-md/Songkran Booboo.png";
 import { fetchStorefrontProducts } from "./supabaseProducts";
 import "./styles.css";
 
@@ -133,6 +142,26 @@ const getImagePresentation = (path, category, file) => {
 const mediumSizeProductPattern =
   /(?:barbie\s*doll|sakura|somgkran|songkran|moonlight)/i;
 
+const bigSizeReplacementImages = [
+  { pattern: /bangkok\s*babe|bankkok\s*babe/i, image: bigBangkokBabeImage },
+  { pattern: /blooming/i, image: bigBloomingImage },
+  { pattern: /california\s*girl|california/i, image: bigCaliforniaGirlImage },
+  { pattern: /holl?ywood|hoolywood/i, image: bigHollywoodImage },
+];
+
+const getBigSizeReplacementImage = (name = "") =>
+  bigSizeReplacementImages.find((item) => item.pattern.test(name))?.image;
+
+const mediumSizeReplacementImages = [
+  { pattern: /barbie\s*(?:doll|boll)/i, image: mediumBarbieDollImage },
+  { pattern: /moonlight/i, image: mediumMoonlightImage },
+  { pattern: /sakura/i, image: mediumSakuraImage },
+  { pattern: /songkran|somgkran/i, image: mediumSongkranImage },
+];
+
+const getMediumSizeReplacementImage = (name = "") =>
+  mediumSizeReplacementImages.find((item) => item.pattern.test(name))?.image;
+
 const getProductCategory = (category, file) => {
   if (category === CATEGORY_FULL && mediumSizeProductPattern.test(file)) {
     return CATEGORY_MEDIUM;
@@ -189,8 +218,35 @@ rawProducts.forEach((product) => {
   products.push(groupedProduct);
 });
 
+products.forEach((product) => {
+  const replacementImage =
+    product.category === CATEGORY_FULL
+      ? getBigSizeReplacementImage(product.name)
+      : product.category === CATEGORY_MEDIUM
+        ? getMediumSizeReplacementImage(product.name)
+        : undefined;
+
+  if (!replacementImage) return;
+
+  product.image = replacementImage;
+  product.images = [replacementImage];
+  product.media = [
+    {
+      src: replacementImage,
+      kind: "product",
+      flip: false,
+    },
+  ];
+});
+
 const normalizeProductName = (value = "") =>
-  value.toLocaleLowerCase().replace(/\s+/g, " ").trim();
+  value
+    .toLocaleLowerCase()
+    .replace(/booboo/g, "")
+    .replace(/false eyelash/g, "")
+    .replace(/\b0?([12])\b/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 
 const staticProductsById = new Map(products.map((product) => [product.id, product]));
 const staticProductsByName = new Map(
@@ -220,12 +276,23 @@ const getStaticProductMatch = (product) =>
   staticProductsById.get(product.id) ??
   staticProductsByName.get(
     `${product.category}-${normalizeProductName(product.name)}`,
-  );
+  ) ??
+  products.find((staticProduct) => {
+    if (staticProduct.category !== product.category) return false;
+
+    const staticName = normalizeProductName(staticProduct.name);
+    const productName = normalizeProductName(product.name);
+    if (!staticName || !productName) return false;
+
+    return staticName.includes(productName) || productName.includes(staticName);
+  });
 
 const ensureDeploySafeProductImages = (remoteProducts) =>
   remoteProducts.map((product) => {
     const staticMatch = getStaticProductMatch(product);
     const fallbackMedia = staticMatch?.media ?? [];
+    const shouldPreferStaticMedia =
+      product.category === CATEGORY_MEDIUM || product.category === CATEGORY_FULL;
     const hasUnsafeMedia =
       !product.media?.length ||
       product.media.some((item) => isDeployUnsafeImageSrc(item.src));
@@ -239,7 +306,7 @@ const ensureDeploySafeProductImages = (remoteProducts) =>
       fallbackMedia,
     };
 
-    if (!hasUnsafeMedia) return productWithFallbacks;
+    if (!hasUnsafeMedia && !shouldPreferStaticMedia) return productWithFallbacks;
 
     return {
       ...productWithFallbacks,
@@ -334,10 +401,10 @@ const exploreCategories = [
 ];
 
 const marqueeMessages = [
-  "ขนตาสวยใน 2 นาที",
-  "NO GLUE MESS",
-  "LIGHT AS AIR",
-  "2MINBOOBOO",
+  "2MINBOOBOO BEST SELLERS",
+  "NO GLUE · NO MESS",
+  "BEAUTY WITH NO LIMITS",
+  "ติดง่ายใน 2 นาที",
 ];
 
 const productSystemMeta = {
@@ -1215,6 +1282,10 @@ function App() {
     };
   }, []);
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }, [currentRoute]);
+
   const filteredProducts = useMemo(
     () =>
       category === CATEGORY_ALL
@@ -1535,9 +1606,18 @@ function App() {
   const selectFeatured = (nextCategory) => {
     setFeaturedCategory(nextCategory);
     setMegaOpen(false);
-    document
-      .getElementById("best-sellers")
-      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (currentRoute !== "home") {
+      navigateToRoute("home");
+    }
+    window.setTimeout(() => {
+      document
+        .getElementById("best-sellers")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 80);
+  };
+
+  const selectHeaderCategory = (nextCategory) => {
+    selectCategory(nextCategory);
   };
 
   const activeHero = storefrontHeroSlides[heroIndex] ?? heroSlides[heroIndex];
@@ -1620,39 +1700,42 @@ function App() {
         </div>
       </div>
 
-      <header className="site-header">
-        <button
-          className="mobile-control"
-          onClick={() => setMobileMenuOpen(true)}
-          aria-label="เปิดเมนู"
-        >
-          <Menu />
-        </button>
-        <nav className="main-nav main-nav-left" aria-label="เมนูหลัก">
+      <div className="audience-tabs" aria-label="เลือกประสบการณ์">
+        <button className="is-active">2MINBOOBOO</button>
+        <button onClick={() => selectCategory("MINI Size")}>LASH LOVERS</button>
+        <button onClick={() => selectCategory(CATEGORY_MEDIUM)}>RESELLERS</button>
+      </div>
+
+      <header className="site-header tatti-header">
+        <div className="tatti-header-side">
           <button
-            className={megaOpen ? "is-active" : ""}
-            onClick={() => setMegaOpen((value) => !value)}
+            className="header-menu-button"
+            onClick={() =>
+              window.innerWidth <= 800
+                ? setMobileMenuOpen(true)
+                : setMegaOpen((value) => !value)
+            }
+            aria-label="เปิดเมนู"
           >
-            SHOP <ChevronDown size={14} />
+            <Menu />
           </button>
-          <button onClick={() => selectFeatured("MINI Size")}>MINI SIZE</button>
-          <button onClick={() => selectFeatured(CATEGORY_MEDIUM)}>MEDIUM SIZE</button>
-          <button onClick={() => selectFeatured("Travelsize")}>TRAVEL SIZE</button>
-          <button onClick={() => selectFeatured(CATEGORY_FULL)}>FULL SIZE</button>
-        </nav>
+          <button
+            className="header-search-box"
+            onClick={() => setSearchOpen(true)}
+            aria-label="ค้นหาสินค้า"
+          >
+            <Search size={17} />
+            <span>Search lashes, styles, kits...</span>
+          </button>
+        </div>
+
         <Logo />
-        <nav className="main-nav main-nav-right">
-          <button
-            className={currentRoute === "products" ? "is-active" : ""}
-            onClick={() => navigateToRoute("products")}
-          >
-            ALL PRODUCTS
-          </button>
-          <a href="#how-to">HOW TO</a>
-          <a href="#real-looks">REAL LOOKS</a>
+
+        <nav className="tatti-header-side tatti-header-actions" aria-label="เมนูบัญชีและตะกร้า">
           <button onClick={() => setSearchOpen(true)} aria-label="ค้นหา">
             <Search />
           </button>
+          <button onClick={() => selectFeatured("BEST SELLERS")}>BEST SELLERS</button>
           <button
             className="bag-button"
             onClick={() => setCartOpen(true)}
@@ -1662,6 +1745,7 @@ function App() {
             <span>{cartCount}</span>
           </button>
         </nav>
+
         <button
           className="mobile-control mobile-bag"
           onClick={() => setCartOpen(true)}
@@ -1670,19 +1754,22 @@ function App() {
           <ShoppingBag />
           <span>{cartCount}</span>
         </button>
+
         {megaOpen ? (
-          <div className="mega-menu">
+          <div className="mega-menu tatti-mega-menu">
             <div>
               <span>SHOP BY FORMAT</span>
-              {categoryOrder.slice(1, 5).map((item) => (
-                <button key={item} onClick={() => selectCategory(item)}>
-                  {categoryLabels[item]}
-                </button>
-              ))}
+              {categoryOrder
+                .filter((item) => item !== CATEGORY_ALL && item !== CATEGORY_REAL && item !== CATEGORY_HOW)
+                .map((item) => (
+                  <button key={item} onClick={() => selectCategory(item)}>
+                    {categoryLabels[item]}
+                  </button>
+                ))}
             </div>
             <div>
               <span>SHOP BY STYLE</span>
-              {["Sakura", "Blooming", "Moonlight", "Bangkok Babe"].map(
+              {["Flora", "Dahlia", "Orchid", "Sakura", "Blooming", "Bangkok Babe"].map(
                 (name) => (
                   <a
                     key={name}
@@ -1696,6 +1783,12 @@ function App() {
                   </a>
                 ),
               )}
+            </div>
+            <div>
+              <span>HELP ME CHOOSE</span>
+              <a href="#how-to" onClick={() => setMegaOpen(false)}>How to apply</a>
+              <a href="#real-looks" onClick={() => setMegaOpen(false)}>Real looks</a>
+              <button onClick={() => selectFeatured("BEST SELLERS")}>Best sellers</button>
             </div>
             <button
               className="mega-feature"
@@ -1722,6 +1815,38 @@ function App() {
           </div>
         ) : null}
       </header>
+
+      <nav className="tatti-category-nav" aria-label="หมวดหมู่สินค้า">
+        <button
+          className={megaOpen ? "is-active" : ""}
+          onClick={() => setMegaOpen((value) => !value)}
+        >
+          SHOP <ChevronDown size={14} />
+        </button>
+        <button onClick={() => selectHeaderCategory("MINI Size")}>MINI SIZE</button>
+        <button onClick={() => selectHeaderCategory(CATEGORY_MEDIUM)}>MEDIUM SIZE</button>
+        <button onClick={() => selectHeaderCategory("Travelsize")}>TRAVEL SIZE</button>
+        <button onClick={() => selectHeaderCategory(CATEGORY_FULL)}>FULL SIZE</button>
+        <button onClick={() => selectFeatured("BEST SELLERS")}>BEST SELLERS</button>
+        <button onClick={() => navigateToRoute("products")}>ALL PRODUCTS</button>
+        <a href="#how-to">HOW TO</a>
+        <a href="#real-looks">REAL LOOKS</a>
+      </nav>
+
+      <section className="tatti-promo-strip" aria-label="ข้อเสนอและบริการ">
+        <button onClick={() => navigateToRoute("products")}>
+          <strong>ส่งฟรีทุกออเดอร์</strong>
+          <span>ไม่มีขั้นต่ำ • จัดส่งไว</span>
+        </button>
+        <button onClick={() => selectFeatured("BEST SELLERS")}>
+          <strong>2 กล่อง ลดเพิ่ม 10%</strong>
+          <span>เลือกคู่โปรดแล้วเพิ่มลงถุง</span>
+        </button>
+        <button onClick={() => selectCategory("MINI Size")}>
+          <strong>ติดง่ายใน 2 นาที</strong>
+          <span>มีกาวในตัว ไม่ต้องใช้กาวเพิ่ม</span>
+        </button>
+      </section>
 
       {mobileMenuOpen ? (
         <div className="mobile-menu">
@@ -1800,58 +1925,26 @@ function App() {
         />
       ) : (
       <main>
-        <section className={`hero hero-${activeHero.tone}`}>
+        <section className="hero tatti-hero">
           <img
             className="hero-atmosphere"
-            src={heroMiniSizeBackground}
+            src={heroOrangeProducts}
             alt=""
             aria-hidden="true"
           />
           <div className="hero-copy">
-            <p>{activeHero.eyebrow}</p>
-            <h1>
-              {activeHero.title.split("\n").map((line) => (
-                <React.Fragment key={line}>
-                  {line}
-                  <br />
-                </React.Fragment>
-              ))}
-            </h1>
-            <span>{activeHero.body}</span>
-            <a href="#best-sellers">
-              {activeHero.cta} <ArrowRight />
-            </a>
-            <div className="hero-dots" aria-label="เลือกแบนเนอร์">
-              {heroSlides.map((slide, index) => (
-                <button
-                  key={slide.title}
-                  className={heroIndex === index ? "is-active" : ""}
-                  onClick={() => setHeroIndex(index)}
-                  aria-label={`แบนเนอร์ ${index + 1}`}
-                />
-              ))}
+            <p>NO GLUE • NO MESS • 2 MINUTES</p>
+            <img
+              className="hero-logo-image"
+              src={heroWhiteLogo}
+              alt="2minBooBoo"
+            />
+            <h1>2 Minutes to Love Yourself. Beauty with No Limits.</h1>
+            <span>ขนตามีกาวในตัว เริ่มต้นจากขนตาปลอมแบบมีกาวในตัว</span>
+            <div className="hero-feature-pills">
+              <i>มีกาวในตัว ไม่ต้องใช้กาว • สวยได้ใน 2 นาที</i>
             </div>
           </div>
-          <button
-            className="hero-arrow hero-arrow-left"
-            onClick={() =>
-              setHeroIndex((index) =>
-                index === 0 ? heroSlides.length - 1 : index - 1,
-              )
-            }
-            aria-label="แบนเนอร์ก่อนหน้า"
-          >
-            <ChevronLeft />
-          </button>
-          <button
-            className="hero-arrow hero-arrow-right"
-            onClick={() =>
-              setHeroIndex((index) => (index + 1) % heroSlides.length)
-            }
-            aria-label="แบนเนอร์ถัดไป"
-          >
-            <ChevronRight />
-          </button>
         </section>
 
         <section className="trust-strip" aria-label="จุดเด่นสินค้า">
@@ -1878,10 +1971,20 @@ function App() {
           </div>
         </section>
 
+        <section className="category-rail tatti-collection-tiles" aria-label="Shop by category">
+          {categoryTiles.map(({ label, note, category: itemCategory, icon: Icon }) => (
+            <button key={label} onClick={() => selectCategory(itemCategory)}>
+              <Icon />
+              <span>{label}</span>
+              <small>{note}</small>
+            </button>
+          ))}
+        </section>
+
         <section className="lash-explorer" id="best-sellers">
           <div className="section-centered-title">
-            <p>THE FULL COLLECTION</p>
-            <h2>Explore Our Lashes</h2>
+            <p>SHOP OUR FAVES</p>
+            <h2>Trending</h2>
           </div>
           <div className="explorer-tabs" role="tablist">
             {exploreCategories.map((item) => (
@@ -1958,63 +2061,44 @@ function App() {
 
         {activeMiniShowcaseProduct ? (
           <section
-            className="mini-showcase"
+            className="tatti-feature-collection"
             style={{ "--series-color": getSeriesColor(activeMiniShowcaseProduct.name) }}
           >
-            <div className="mini-showcase-copy">
-              <h2>
-                Mini Size
-                <br />
-              </h2>
+            <button
+              className="tatti-feature-banner"
+              onClick={() => selectCategory("MINI Size")}
+            >
+              <img
+                src={
+                  activeMiniShowcaseProduct.media?.[0]?.src ??
+                  activeMiniShowcaseProduct.image
+                }
+                alt={activeMiniShowcaseProduct.name}
+                loading="lazy"
+                onError={(event) =>
+                  swapBrokenImageToFallback(
+                    event,
+                    getProductFallbackMedia(activeMiniShowcaseProduct, 0)?.src,
+                  )
+                }
+              />
               <span>
+                <small>MINI SIZE</small>
+                <strong>Shop Our Best Selling Mini Lashes.</strong>
+                <em>Discover now</em>
               </span>
-              <button onClick={() => selectFeatured("MINI Size")}>
-                SHOP MINI SIZE <ArrowRight />
-              </button>
-            </div>
-            <div className="mini-showcase-stage" aria-label="MINI Size showcase">
-              <div className="mini-showcase-glow" />
-              {miniShowcaseProducts.map((product, index) => {
-                const media =
-                  product.media?.find((item) => item.kind === "product") ??
-                  product.media?.[0] ??
-                  { src: product.image, flip: false };
-                return (
-                  <button
-                    key={`${product.id}-${index}`}
-                    className={`mini-showcase-card mini-showcase-card-${index} ${
-                      index === 0 ? "is-active" : ""
-                    }`}
-                    onClick={() =>
-                      setMiniShowcaseIndex(
-                        storefrontMiniProducts.findIndex(
-                          (item) => item.id === product.id,
-                        ),
-                      )
-                    }
-                    aria-label={`ดูรุ่น ${product.name}`}
-                  >
-                    <img
-                      className={media.flip ? "is-flipped" : ""}
-                      src={media.src}
-                      alt={product.name}
-                      loading="lazy"
-                      onError={(event) =>
-                        swapBrokenImageToFallback(
-                          event,
-                          getProductFallbackMedia(product, index)?.src,
-                        )
-                      }
-                    />
-                    <span>
-                      <small>MINI SIZE</small>
-                      {product.name}
-                    </span>
-                  </button>
-                );
-              })}
+            </button>
+            <div className="tatti-feature-products">
+              {miniShowcaseProducts.slice(1, 3).map((product) => (
+                <ProductCard
+                  key={`feature-${product.id}`}
+                  product={product}
+                  onAdd={addToCart}
+                  compact
+                />
+              ))}
               <button
-                className="mini-showcase-next"
+                className="tatti-feature-next"
                 onClick={nextMiniShowcase}
                 aria-label="เลื่อนรุ่น MINI Size ถัดไป"
               >
@@ -2060,10 +2144,22 @@ function App() {
           </div>
         </section>
 
+        <ProductRail
+          title="Shop Medium Size"
+          eyebrow="กล่องกลาง · รุ่นขายดี"
+          items={productSystemMediumProducts}
+          onAdd={addToCart}
+          action={
+            <button className="collection-show-all" onClick={() => selectCategory(CATEGORY_MEDIUM)}>
+              Shop all
+            </button>
+          }
+        />
+
         <section className="look-selector" id="real-looks">
           <div className="section-centered-title">
-            <p>FIND YOUR LASH ENERGY</p>
-            <h2>เลือกตามลุคที่คุณชอบ</h2>
+            <p>REAL LOOKS</p>
+            <h2>Shop by Collection</h2>
           </div>
           <div className="look-grid">
             {lookImages.map((product, index) => (
@@ -2159,6 +2255,18 @@ function App() {
             <Stars />
           </div>
         </section>
+
+        <ProductRail
+          title="Best Selling Big Size"
+          eyebrow="FULL SIZE"
+          items={productSystemFullProducts}
+          onAdd={addToCart}
+          action={
+            <button className="collection-show-all" onClick={() => selectCategory(CATEGORY_FULL)}>
+              Shop all
+            </button>
+          }
+        />
 
         <ProductSystemSection
           miniItems={productSystemMiniProducts}
