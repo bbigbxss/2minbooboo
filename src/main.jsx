@@ -14,6 +14,7 @@ import {
   Instagram,
   Menu,
   Minus,
+  Pause,
   Package,
   Play,
   Plus,
@@ -28,7 +29,7 @@ import {
 } from "lucide-react";
 import AdminPanel from "./AdminPanel.jsx";
 import heroWhiteLogo from "./assets/hero/hero-2minbooboo-logo-crop.png";
-import heroOrangeProducts from "./assets/hero/hero-lifestyle-orange.png";
+import heroOrangeProducts from "./assets/hero/hero-lifestyle-model-orange.png";
 import bigBangkokBabeImage from "./assets/big-size-md/Bangkok Babe.png";
 import bigBloomingImage from "./assets/big-size-md/Blooming.png";
 import bigCaliforniaGirlImage from "./assets/big-size-md/California Girl.png";
@@ -37,6 +38,7 @@ import mediumBarbieDollImage from "./assets/medium-size-md/Barbie Doll.png";
 import mediumMoonlightImage from "./assets/medium-size-md/Moonlight.png";
 import mediumSakuraImage from "./assets/medium-size-md/Sakura.png";
 import mediumSongkranImage from "./assets/medium-size-md/Songkran Booboo.png";
+import howToThaiVideo from "./assets/videos/how-to-thai.mp4";
 import { fetchStorefrontProducts } from "./supabaseProducts";
 import "./styles.css";
 
@@ -1154,6 +1156,10 @@ function App() {
   const [storeProducts, setStoreProducts] = useState(products);
   const featuredRailRef = useRef(null);
   const catalogRailRef = useRef(null);
+  const howMediaRef = useRef(null);
+  const howVideoRef = useRef(null);
+  const userPausedHowVideoRef = useRef(false);
+  const [isHowVideoPlaying, setIsHowVideoPlaying] = useState(false);
   const featuredDragRef = useRef({
     isDragging: false,
     pointerId: null,
@@ -1193,6 +1199,16 @@ function App() {
   const storefrontFullSizeProducts = useMemo(
     () =>
       storefrontProducts.filter((product) => product.category === CATEGORY_FULL),
+    [storefrontProducts],
+  );
+  const showcaseProducts = useMemo(
+    () =>
+      storefrontProducts.filter(
+        (product) =>
+          product.category !== CATEGORY_REAL &&
+          product.category !== CATEGORY_HOW &&
+          product.category !== CATEGORY_SINGLE,
+      ),
     [storefrontProducts],
   );
   const storefrontHeroSlides = useMemo(
@@ -1263,14 +1279,65 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (storefrontMiniProducts.length <= 1) return undefined;
+    if (showcaseProducts.length <= 1) return undefined;
     const timer = window.setInterval(() => {
       setMiniShowcaseIndex(
-        (index) => (index + 1) % storefrontMiniProducts.length,
+        (index) => (index + 1) % showcaseProducts.length,
       );
-    }, 3500);
+    }, 3000);
     return () => window.clearInterval(timer);
-  }, [storefrontMiniProducts.length]);
+  }, [showcaseProducts.length]);
+
+  useEffect(() => {
+    if (!showcaseProducts.length) return;
+    setMiniShowcaseIndex((index) => index % showcaseProducts.length);
+  }, [showcaseProducts.length]);
+
+  useEffect(() => {
+    const media = howMediaRef.current;
+    const video = howVideoRef.current;
+    if (!media || !video) return undefined;
+
+    const syncVideoState = () => {
+      setIsHowVideoPlaying(!video.paused && !video.ended);
+    };
+
+    const playVideo = () => {
+      video.play().catch(() => {
+        setIsHowVideoPlaying(false);
+      });
+    };
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && entry.intersectionRatio >= 0.42) {
+          if (!userPausedHowVideoRef.current) {
+            playVideo();
+          }
+          return;
+        }
+
+        video.pause();
+      },
+      {
+        threshold: [0, 0.42, 0.75],
+      },
+    );
+
+    video.addEventListener("play", syncVideoState);
+    video.addEventListener("pause", syncVideoState);
+    video.addEventListener("ended", syncVideoState);
+    observer.observe(media);
+    syncVideoState();
+
+    return () => {
+      observer.disconnect();
+      video.pause();
+      video.removeEventListener("play", syncVideoState);
+      video.removeEventListener("pause", syncVideoState);
+      video.removeEventListener("ended", syncVideoState);
+    };
+  }, []);
 
   useEffect(() => {
     const syncRoute = () => setCurrentRoute(getAppRoute());
@@ -1627,15 +1694,15 @@ function App() {
     ...storefrontMiniProducts.flatMap((product) => product.media.slice(0, 1)),
   ].slice(0, 8);
   const miniShowcaseProducts = useMemo(() => {
-    if (!storefrontMiniProducts.length) return [];
+    if (!showcaseProducts.length) return [];
     return Array.from(
-      { length: Math.min(5, storefrontMiniProducts.length) },
+      { length: Math.min(5, showcaseProducts.length) },
       (_, offset) =>
-        storefrontMiniProducts[
-          (miniShowcaseIndex + offset) % storefrontMiniProducts.length
+        showcaseProducts[
+          (miniShowcaseIndex + offset) % showcaseProducts.length
         ],
     );
-  }, [miniShowcaseIndex, storefrontMiniProducts]);
+  }, [miniShowcaseIndex, showcaseProducts]);
   const activeMiniShowcaseProduct = miniShowcaseProducts[0];
   const productSystemMiniProducts = useMemo(() => {
     const miniPriority = ["flora", "dahlia", "orchid"];
@@ -1664,10 +1731,26 @@ function App() {
     [],
   );
   const nextMiniShowcase = () => {
-    if (!storefrontMiniProducts.length) return;
+    if (!showcaseProducts.length) return;
     setMiniShowcaseIndex(
-      (index) => (index + 1) % storefrontMiniProducts.length,
+      (index) => (index + 1) % showcaseProducts.length,
     );
+  };
+
+  const toggleHowVideo = () => {
+    const video = howVideoRef.current;
+    if (!video) return;
+
+    if (video.paused || video.ended) {
+      userPausedHowVideoRef.current = false;
+      video.play().catch(() => {
+        setIsHowVideoPlaying(false);
+      });
+      return;
+    }
+
+    userPausedHowVideoRef.current = true;
+    video.pause();
   };
 
   if (isAdminRoute) {
@@ -1833,21 +1916,6 @@ function App() {
         <a href="#real-looks">REAL LOOKS</a>
       </nav>
 
-      <section className="tatti-promo-strip" aria-label="ข้อเสนอและบริการ">
-        <button onClick={() => navigateToRoute("products")}>
-          <strong>ส่งฟรีทุกออเดอร์</strong>
-          <span>ไม่มีขั้นต่ำ • จัดส่งไว</span>
-        </button>
-        <button onClick={() => selectFeatured("BEST SELLERS")}>
-          <strong>2 กล่อง ลดเพิ่ม 10%</strong>
-          <span>เลือกคู่โปรดแล้วเพิ่มลงถุง</span>
-        </button>
-        <button onClick={() => selectCategory("MINI Size")}>
-          <strong>ติดง่ายใน 2 นาที</strong>
-          <span>มีกาวในตัว ไม่ต้องใช้กาวเพิ่ม</span>
-        </button>
-      </section>
-
       {mobileMenuOpen ? (
         <div className="mobile-menu">
           <div>
@@ -1939,7 +2007,10 @@ function App() {
               src={heroWhiteLogo}
               alt="2minBooBoo"
             />
-            <h1>2 Minutes to Love Yourself. Beauty with No Limits.</h1>
+            <h1>
+              <span className="hero-title-line">2Minutes to Love Yourself.</span>
+              <span className="hero-title-line">Bueaty with No Limits.</span>
+            </h1>
             <span>ขนตามีกาวในตัว เริ่มต้นจากขนตาปลอมแบบมีกาวในตัว</span>
             <div className="hero-feature-pills">
               <i>มีกาวในตัว ไม่ต้องใช้กาว • สวยได้ใน 2 นาที</i>
@@ -2066,7 +2137,7 @@ function App() {
           >
             <button
               className="tatti-feature-banner"
-              onClick={() => selectCategory("MINI Size")}
+              onClick={() => selectCategory(activeMiniShowcaseProduct.category)}
             >
               <img
                 src={
@@ -2083,13 +2154,18 @@ function App() {
                 }
               />
               <span>
-                <small>MINI SIZE</small>
-                <strong>Shop Our Best Selling Mini Lashes.</strong>
+                <small>
+                  {categoryLabels[activeMiniShowcaseProduct.category] ??
+                    activeMiniShowcaseProduct.category}
+                </small>
+                <strong>
+                  {activeMiniShowcaseProduct.name}
+                </strong>
                 <em>Discover now</em>
               </span>
             </button>
             <div className="tatti-feature-products">
-              {miniShowcaseProducts.slice(1, 3).map((product) => (
+              {miniShowcaseProducts.slice(1, 5).map((product) => (
                 <ProductCard
                   key={`feature-${product.id}`}
                   product={product}
@@ -2190,7 +2266,26 @@ function App() {
         </section>
 
         <section className="how-to" id="how-to">
-          <div className="how-media">
+          <div className="how-media" ref={howMediaRef}>
+            <video
+              ref={howVideoRef}
+              className="how-video"
+              muted
+              playsInline
+              preload="metadata"
+              loop
+              aria-label="วิธีติดขนตา 2minBooBoo"
+            >
+              <source src={howToThaiVideo} type="video/mp4" />
+            </video>
+            <button
+              className="how-video-toggle"
+              onClick={toggleHowVideo}
+              aria-label={isHowVideoPlaying ? "หยุดวิดีโอวิธีใช้" : "เล่นวิดีโอวิธีใช้"}
+              aria-pressed={isHowVideoPlaying}
+            >
+              {isHowVideoPlaying ? <Pause fill="currentColor" /> : <Play fill="currentColor" />}
+            </button>
             <img
               src={
                 storefrontMiniProducts[1]?.media?.[0]?.src ??
