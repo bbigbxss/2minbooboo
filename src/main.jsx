@@ -38,6 +38,7 @@ import mediumBarbieDollImage from "./assets/medium-size-md/Barbie Doll.png";
 import mediumMoonlightImage from "./assets/medium-size-md/Moonlight.png";
 import mediumSakuraImage from "./assets/medium-size-md/Sakura.png";
 import mediumSongkranImage from "./assets/medium-size-md/Songkran Booboo.png";
+import howToThaiPoster from "./assets/videos/how-to-thai-poster.jpg";
 import howToThaiVideo from "./assets/videos/how-to-thai.mp4";
 import { fetchStorefrontProducts } from "./supabaseProducts";
 import "./styles.css";
@@ -2273,6 +2274,7 @@ function App() {
               muted
               playsInline
               preload="metadata"
+              poster={howToThaiPoster}
               loop
               aria-label="วิธีติดขนตา 2minBooBoo"
             >
