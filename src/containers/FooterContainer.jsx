@@ -31,7 +31,7 @@ export function FooterContainer({ LogoComponent }) {
           <a href="https://lin.ee/PxDSbDy">Contact Us</a>
           <a href="#how-to">How to use</a>
           <a href="#real-looks">Real looks</a>
-          <a href="#top">Shipping & Returns</a>
+          <a href="https://lin.ee/PxDSbDy">7-Day Returns for Defective Items</a>
         </div>
         <div>
           <h3>FOLLOW</h3>
