@@ -538,10 +538,10 @@ const heroSlides = [
 
 const exploreCategories = [
   { label: "MINI SIZE", value: "MINI Size" },
-  { label: "TRAVEL SIZE", value: "Travelsize" },
   { label: "MEDIUM SIZE", value: CATEGORY_MEDIUM },
   { label: "FULL SIZE", value: CATEGORY_FULL },
-  { label: "BEST SELLERS", value: "BEST SELLERS" },
+  { label: "TRAVEL SIZE", value: "Travelsize" },
+  { label: "BEST SELLERS", value: "BEST SELLERS" }
 ];
 
 const marqueeMessages = [
@@ -1475,7 +1475,7 @@ function App() {
       setMiniShowcaseIndex(
         (index) => (index + 1) % miniShowcaseSourceProducts.length,
       );
-    }, 3000);
+    }, 2000);
     return () => window.clearInterval(timer);
   }, [miniShowcaseSourceProducts.length]);
 
@@ -1488,7 +1488,7 @@ function App() {
     if (eyeShowcaseImages.length <= 1) return undefined;
     const timer = window.setInterval(() => {
       setEyeShowcaseIndex((index) => (index + 1) % eyeShowcaseImages.length);
-    }, 8000);
+    }, 1000);
     return () => window.clearInterval(timer);
   }, []);
 
