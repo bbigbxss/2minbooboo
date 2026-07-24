@@ -149,6 +149,50 @@ const categoryPrices = {
   [CATEGORY_HOW]: 159,
 };
 
+const getDefaultOriginalPrice = (product = {}) => {
+  const category = product.category;
+  const name = String(product.name || "").toLocaleLowerCase();
+
+  if (category === CATEGORY_MINI || category === "New MINI Size") {
+    return name.includes("dahlia") ? 129 : 99;
+  }
+
+  if (category === CATEGORY_MEDIUM) {
+    if (/sakura|barbie|babie/.test(name)) return 258;
+    if (/moonlight/.test(name)) return 318;
+    if (/songkran|somgkran/.test(name)) return 376;
+  }
+
+  if (category === CATEGORY_FULL) {
+    if (/blooming/.test(name)) return 378;
+    if (/bangkok|hollywood|california/.test(name)) return 318;
+  }
+
+  return undefined;
+};
+
+const getOriginalPrice = (product = {}) =>
+  Number(product.originalPrice ?? product.original_price ?? 0) ||
+  getDefaultOriginalPrice(product);
+
+const formatPrice = (value) =>
+  `฿${Number(value || 0).toLocaleString("th-TH")}`;
+
+function PriceDisplay({ product, className = "" }) {
+  const originalPrice = getOriginalPrice(product);
+  const price = Number(product?.price || 0);
+  const shouldShowOriginal = originalPrice && originalPrice !== price;
+
+  return (
+    <span className={`price-display ${className}`.trim()}>
+      {shouldShowOriginal ? (
+        <span className="price-original">{formatPrice(originalPrice)}</span>
+      ) : null}
+      <strong className="price-current">{formatPrice(price)}</strong>
+    </span>
+  );
+}
+
 const seriesColors = {
   sakura: "#ffb5c8",
   thaipop: "#e8c0f5",
@@ -305,6 +349,7 @@ const rawProducts = Object.entries(productModules).map(
       media: [{ src: image, ...getImagePresentation(path, category, file) }],
       name,
       price: categoryPrices[category] ?? 229,
+      originalPrice: getDefaultOriginalPrice({ category, name }),
       isNew: index % 13 === 0,
     };
   },
@@ -339,6 +384,8 @@ rawProducts.forEach((product) => {
 });
 
 products.forEach((product) => {
+  product.originalPrice = getOriginalPrice(product);
+
   const replacementImage =
     product.category === CATEGORY_FULL
       ? getBigSizeReplacementImage(product.name)
@@ -479,6 +526,7 @@ const ensureDeploySafeProductImages = (remoteProducts) =>
 
     const productWithFallbacks = {
       ...product,
+      originalPrice: getOriginalPrice(product) ?? staticMatch.originalPrice,
       fallbackImage: staticMatch.image,
       fallbackImages: staticMatch.images,
       fallbackMedia,
@@ -769,7 +817,7 @@ function ProductZoom({ product, media, fallbackMedia, onClose }) {
           <span className="zoom-eyebrow">PRODUCT PREVIEW</span>
           <p>{categoryLabels[product.category] ?? product.category}</p>
           <h2>{product.name}</h2>
-          <strong>฿{product.price.toLocaleString("th-TH")}</strong>
+          <PriceDisplay product={product} className="zoom-price" />
           <div className="zoom-divider" />
         </div>
       </div>
@@ -898,7 +946,7 @@ function ProductCard({ product, onAdd, compact = false }) {
           <span>({18 + (product.name.length % 62)})</span>
         </div>
         <div className="product-action" data-container="product-card-action">
-          <strong>฿{product.price.toLocaleString("th-TH")}</strong>
+          <PriceDisplay product={product} />
           <button onClick={() => onAdd(product)}>เพิ่มลงถุง</button>
         </div>
       </div>
@@ -1230,7 +1278,7 @@ function CartDrawer({
                   <div className="cart-item-copy" data-container="cart-item-copy">
                     <p>{categoryLabels[item.category] ?? item.category}</p>
                     <h3>{item.name}</h3>
-                    <strong>฿{item.price.toLocaleString("th-TH")}</strong>
+                    <PriceDisplay product={item} className="cart-item-price" />
                     <div className="quantity-control">
                       <button
                         onClick={() => onDecrease(item.id)}
@@ -1273,7 +1321,7 @@ function CartDrawer({
                   />
                   <div>
                     <strong>{product.name}</strong>
-                    <span>฿{product.price.toLocaleString("th-TH")}</span>
+                    <PriceDisplay product={product} className="cart-recommendation-price" />
                   </div>
                   <button
                     onClick={() => onAdd(product)}
@@ -1358,7 +1406,7 @@ function SearchOverlay({ products: allProducts, onClose, onAdd }) {
             <div>
               <p>{categoryLabels[product.category] ?? product.category}</p>
               <h3>{product.name}</h3>
-              <span>฿{product.price.toLocaleString("th-TH")}</span>
+              <PriceDisplay product={product} className="search-result-price" />
             </div>
             <button onClick={() => onAdd(product)}>เพิ่มลงถุง</button>
           </article>
@@ -1409,7 +1457,7 @@ function CareerModal({ onClose }) {
         <p className="career-modal-eyebrow">2MINBOOBOO CARRER</p>
         <h2 id="career-modal-title">สมัครเป็น</h2>
         <h2 id="career-modal-title">( AFFILIATE )</h2>
-        <h2 id="career-modal-title">2minBooBoo</h2>
+        <h2 id="career-modal-title">2minBooboo</h2>
         <p className="career-modal-copy">CONTACT US</p>
         <a href="mailto:2minbooboolashes@gmail.com">
           2minbooboolashes@gmail.com

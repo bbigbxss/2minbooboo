@@ -25,6 +25,7 @@ export const normalizeDbProduct = (row) => {
     hoverImage,
     name: row.name,
     price: Number(row.price ?? 0),
+    originalPrice: Number(row.original_price ?? 0) || undefined,
     isNew: Boolean(row.is_new),
     detailLeft: row.detail_left ?? undefined,
     detailRight: row.detail_right ?? undefined,
@@ -95,6 +96,24 @@ export const saveAdminProduct = async (token, product) => {
   });
 
   if (error) throw error;
+
+  const savedProductId = data?.id ?? product.id;
+  const originalPrice = Number(product.originalPrice || 0);
+  if (originalPrice && savedProductId) {
+    const { error: originalPriceError } = await supabase.rpc(
+      "admin_set_product_original_price",
+      {
+        p_token: token,
+        p_product_id: savedProductId,
+        p_original_price: originalPrice,
+      },
+    );
+
+    if (originalPriceError) {
+      console.warn("Could not save original price", originalPriceError);
+    }
+  }
+
   return data;
 };
 

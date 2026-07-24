@@ -6448,3 +6448,62 @@ footer,
     grid-template-columns: 1fr;
   }
 }
+
+.price-display {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-family: "Prompt", sans-serif;
+  line-height: 1.1;
+}
+
+.price-original {
+  color: rgba(126, 52, 13, .52);
+  font-size: .9em;
+  font-weight: 700;
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+  text-decoration-color: rgba(126, 52, 13, .7);
+}
+
+.price-current {
+  color: var(--orange);
+  font-weight: 900;
+}
+
+.product-action .price-display {
+  min-width: 0;
+}
+
+.product-action .price-current {
+  font-size: 13px;
+}
+
+.zoom-price {
+  margin-top: 12px;
+  font-size: 22px;
+}
+
+.cart-item-price,
+.cart-recommendation-price,
+.search-result-price {
+  gap: 6px;
+}
+
+.cart-recommendation-price,
+.search-result-price {
+  font-size: 12px;
+}
+
+.cart-recommendations .price-original,
+.search-results .price-original,
+.cart-item-copy .price-original {
+  color: rgba(126, 52, 13, .52);
+}
+
+.cart-recommendations .price-current,
+.search-results .price-current,
+.cart-item-copy .price-current {
+  color: var(--orange);
+}

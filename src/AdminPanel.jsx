@@ -19,6 +19,7 @@ const emptyProduct = {
   name: "",
   category: "New MINI Size",
   price: 229,
+  originalPrice: "",
   detailLeft: "",
   detailRight: "",
   isNew: true,
@@ -120,6 +121,21 @@ function ProductForm({
             onChange={(event) =>
               onChange({ ...product, price: Number(event.target.value) })
             }
+          />
+        </label>
+        <label>
+          ราคาเต็ม
+          <input
+            type="number"
+            value={product.originalPrice ?? ""}
+            onChange={(event) =>
+              onChange({
+                ...product,
+                originalPrice:
+                  event.target.value === "" ? "" : Number(event.target.value),
+              })
+            }
+            placeholder="เช่น 99"
           />
         </label>
         <label>
