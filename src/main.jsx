@@ -12,7 +12,6 @@ import {
   Gift,
   Heart,
   Instagram,
-  Menu,
   Minus,
   Pause,
   Package,
@@ -28,18 +27,38 @@ import {
   ZoomIn,
 } from "lucide-react";
 import AdminPanel from "./AdminPanel.jsx";
+import {
+  BrandMarqueeContainer,
+  CategoryTilesContainer,
+  FooterContainer,
+  HeaderContainer,
+  HeroContainer,
+  TrustStripContainer,
+} from "./containers";
 import heroWhiteLogo from "./assets/hero/hero-2minbooboo-logo-crop.png";
 import heroOrangeProducts from "./assets/hero/hero-lifestyle-model-orange.png";
 import bigBangkokBabeImage from "./assets/big-size-md/Bangkok Babe.png";
 import bigBloomingImage from "./assets/big-size-md/Blooming.png";
 import bigCaliforniaGirlImage from "./assets/big-size-md/California Girl.png";
 import bigHollywoodImage from "./assets/big-size-md/Hollywood.png";
+import bigHoverBangkokBabeImage from "./assets/big-size-hover/Bangkok Babe.png";
+import bigHoverBloomingImage from "./assets/big-size-hover/Blooming.png";
+import bigHoverCaliforniaGirlImage from "./assets/big-size-hover/California Girl.png";
+import bigHoverHollywoodImage from "./assets/big-size-hover/Hollywood.png";
 import mediumBarbieDollImage from "./assets/medium-size-md/Barbie Doll.png";
 import mediumMoonlightImage from "./assets/medium-size-md/Moonlight.png";
 import mediumSakuraImage from "./assets/medium-size-md/Sakura.png";
 import mediumSongkranImage from "./assets/medium-size-md/Songkran Booboo.png";
+import mediumHoverBarbieDollImage from "./assets/medium-size-hover/Barbie Doll.png";
+import mediumHoverMoonlightImage from "./assets/medium-size-hover/Moonlight.png";
+import mediumHoverSakuraImage from "./assets/medium-size-hover/Sakura.png";
+import mediumHoverSongkranImage from "./assets/medium-size-hover/Songkran Booboo.png";
 import howToThaiPoster from "./assets/videos/how-to-thai-poster.jpg";
 import howToThaiVideo from "./assets/videos/how-to-thai.mp4";
+import realLookNaturalVideo from "./assets/real-look-videos/natural.mp4";
+import realLookSoftGlamVideo from "./assets/real-look-videos/soft-glam.mp4";
+import realLookBoldVideo from "./assets/real-look-videos/bold.mp4";
+import realLookNightOutVideo from "./assets/real-look-videos/night-out.mp4";
 import { fetchStorefrontProducts } from "./supabaseProducts";
 import "./styles.css";
 
@@ -58,6 +77,35 @@ const productModules = import.meta.glob(
 );
 
 const CATEGORY_ALL = "ทั้งหมด";
+const miniSizeHoverModules = import.meta.glob(
+  [
+    "./assets/minisize-img-two/**/*.png",
+    "./assets/minisize-img-two/**/*.jpg",
+    "./assets/minisize-img-two/**/*.jpeg",
+    "./assets/minisize-img-two/**/*.webp",
+  ],
+  {
+    eager: true,
+    query: "?url",
+    import: "default",
+  },
+);
+
+const eyeShowcaseModules = import.meta.glob(
+  [
+    "./assets/eye/**/*.png",
+    "./assets/eye/**/*.jpg",
+    "./assets/eye/**/*.jpeg",
+    "./assets/eye/**/*.webp",
+  ],
+  {
+    eager: true,
+    query: "?url",
+    import: "default",
+  },
+);
+
+const CATEGORY_MINI = "MINI Size";
 const CATEGORY_MEDIUM = "Medium Size";
 const CATEGORY_FULL = "กล่องใหญ่";
 const CATEGORY_SINGLE = "ขนตาเดี่ยว";
@@ -66,7 +114,7 @@ const CATEGORY_HOW = "แบบใส่ก้าน";
 
 const categoryOrder = [
   CATEGORY_ALL,
-  "MINI Size",
+  CATEGORY_MINI,
   "Travelsize",
   CATEGORY_MEDIUM,
   CATEGORY_FULL,
@@ -76,7 +124,7 @@ const categoryOrder = [
 
 const categoryLabels = {
   [CATEGORY_ALL]: "ALL",
-  "MINI Size": "MINI SIZE",
+  [CATEGORY_MINI]: "MINI SIZE",
   Travelsize: "TRAVEL SIZE",
   [CATEGORY_MEDIUM]: "MEDIUM SIZE",
   [CATEGORY_FULL]: "FULL SIZE",
@@ -84,8 +132,15 @@ const categoryLabels = {
   [CATEGORY_HOW]: "HOW TO",
 };
 
+const realLookVideos = [
+  { id: "natural", label: "HOLLYWOOD LOOK", src: realLookNaturalVideo },
+  { id: "soft-glam", label: "", src: realLookSoftGlamVideo },
+  { id: "bold", label: "", src: realLookBoldVideo },
+  { id: "night-out", label: "SAKURA LOOK", src: realLookNightOutVideo },
+];
+
 const categoryPrices = {
-  "MINI Size": 189,
+  [CATEGORY_MINI]: 189,
   Travelsize: 259,
   [CATEGORY_MEDIUM]: 299,
   [CATEGORY_FULL]: 349,
@@ -136,6 +191,18 @@ const prettify = (value) =>
     .replace(/\s+/g, " ")
     .trim();
 
+const eyeShowcaseImages = Object.entries(eyeShowcaseModules)
+  .sort(([pathA], [pathB]) =>
+    pathA.localeCompare(pathB, undefined, {
+      numeric: true,
+      sensitivity: "base",
+    }),
+  )
+  .map(([path, src]) => ({
+    src,
+    alt: prettify(path.split("/").at(-1) ?? "2minBooBoo eye look"),
+  }));
+
 const getImagePresentation = (path, category, file) => {
   const isEye = category === CATEGORY_REAL;
   const flip = /(?:^|\/)orchid02\.(?:png|jpe?g|webp)$/i.test(path);
@@ -155,6 +222,16 @@ const bigSizeReplacementImages = [
 const getBigSizeReplacementImage = (name = "") =>
   bigSizeReplacementImages.find((item) => item.pattern.test(name))?.image;
 
+const bigSizeHoverImages = [
+  { pattern: /bangkok\s*babe|bankkok\s*babe/i, image: bigHoverBangkokBabeImage },
+  { pattern: /blooming/i, image: bigHoverBloomingImage },
+  { pattern: /california\s*girl|california/i, image: bigHoverCaliforniaGirlImage },
+  { pattern: /holl?ywood|hoolywood/i, image: bigHoverHollywoodImage },
+];
+
+const getBigSizeHoverImage = (name = "") =>
+  bigSizeHoverImages.find((item) => item.pattern.test(name))?.image;
+
 const mediumSizeReplacementImages = [
   { pattern: /barbie\s*(?:doll|boll)/i, image: mediumBarbieDollImage },
   { pattern: /moonlight/i, image: mediumMoonlightImage },
@@ -164,6 +241,43 @@ const mediumSizeReplacementImages = [
 
 const getMediumSizeReplacementImage = (name = "") =>
   mediumSizeReplacementImages.find((item) => item.pattern.test(name))?.image;
+
+const mediumSizeHoverImages = [
+  { pattern: /barbie\s*(?:doll|boll)/i, image: mediumHoverBarbieDollImage },
+  { pattern: /moonlight/i, image: mediumHoverMoonlightImage },
+  { pattern: /sakura/i, image: mediumHoverSakuraImage },
+  { pattern: /songkran|somgkran/i, image: mediumHoverSongkranImage },
+];
+
+const getMediumSizeHoverImage = (name = "") =>
+  mediumSizeHoverImages.find((item) => item.pattern.test(name))?.image;
+
+const normalizeHoverLookupKey = (value = "") =>
+  value
+    .toLocaleLowerCase()
+    .replace(/\.(png|jpe?g|webp)$/i, "")
+    .replace(/calofornia/g, "california")
+    .replace(/hoolywood/g, "hollywood")
+    .replace(/holly\s*wood/g, "hollywood")
+    .replace(/thai\s*pop/g, "thaipop")
+    .replace(/bangkok\s*babe/g, "bangkokbabe")
+    .replace(/bankkok\s*babe/g, "bangkokbabe")
+    .replace(/\s+/g, "")
+    .replace(/[^a-z0-9ก-๙]/g, "");
+
+const miniSizeHoverImages = Object.entries(miniSizeHoverModules).map(
+  ([path, image]) => ({
+    key: normalizeHoverLookupKey(path.split("/").at(-1) ?? ""),
+    image,
+  }),
+);
+
+const getMiniSizeHoverImage = (name = "") => {
+  const key = normalizeHoverLookupKey(name);
+  return miniSizeHoverImages.find(
+    (item) => key.includes(item.key) || item.key.includes(key),
+  )?.image;
+};
 
 const getProductCategory = (category, file) => {
   if (category === CATEGORY_FULL && mediumSizeProductPattern.test(file)) {
@@ -229,17 +343,45 @@ products.forEach((product) => {
         ? getMediumSizeReplacementImage(product.name)
         : undefined;
 
-  if (!replacementImage) return;
+  const hoverImage =
+    product.category === CATEGORY_MINI
+      ? getMiniSizeHoverImage(product.name)
+      : product.category === CATEGORY_MEDIUM
+        ? getMediumSizeHoverImage(product.name)
+        : product.category === CATEGORY_FULL
+          ? getBigSizeHoverImage(product.name)
+          : undefined;
 
-  product.image = replacementImage;
-  product.images = [replacementImage];
-  product.media = [
-    {
-      src: replacementImage,
-      kind: "product",
-      flip: false,
-    },
-  ];
+  if (replacementImage) {
+    product.image = replacementImage;
+    product.images = [replacementImage];
+    product.media = [
+      {
+        src: replacementImage,
+        kind: "product",
+        flip: false,
+      },
+    ];
+  }
+
+  if (hoverImage) {
+    product.hoverImage = hoverImage;
+
+    if (product.category === CATEGORY_MINI) {
+      const hasHoverMedia = product.media?.some((item) => item.src === hoverImage);
+      product.images = [...new Set([...(product.images ?? []), hoverImage])];
+      if (!hasHoverMedia) {
+        product.media = [
+          ...(product.media ?? []),
+          {
+            src: hoverImage,
+            kind: "hover",
+            flip: false,
+          },
+        ];
+      }
+    }
+  }
 });
 
 const normalizeProductName = (value = "") =>
@@ -294,8 +436,6 @@ const ensureDeploySafeProductImages = (remoteProducts) =>
   remoteProducts.map((product) => {
     const staticMatch = getStaticProductMatch(product);
     const fallbackMedia = staticMatch?.media ?? [];
-    const shouldPreferStaticMedia =
-      product.category === CATEGORY_MEDIUM || product.category === CATEGORY_FULL;
     const hasUnsafeMedia =
       !product.media?.length ||
       product.media.some((item) => isDeployUnsafeImageSrc(item.src));
@@ -307,9 +447,10 @@ const ensureDeploySafeProductImages = (remoteProducts) =>
       fallbackImage: staticMatch.image,
       fallbackImages: staticMatch.images,
       fallbackMedia,
+      hoverImage: product.hoverImage ?? staticMatch.hoverImage,
     };
 
-    if (!hasUnsafeMedia && !shouldPreferStaticMedia) return productWithFallbacks;
+    if (!hasUnsafeMedia) return productWithFallbacks;
 
     return {
       ...productWithFallbacks,
@@ -354,7 +495,7 @@ const lifestyleImages = products.filter(
   (product) => product.category === CATEGORY_REAL,
 );
 const miniProducts = products.filter(
-  (product) => product.category === "MINI Size",
+  (product) => product.category === CATEGORY_MINI,
 );
 const fullSizeProducts = products.filter(
   (product) => product.category === CATEGORY_FULL,
@@ -525,11 +666,11 @@ function Logo({ light = false }) {
   return (
     <a
       className={`logo ${light ? "logo-light" : ""}`}
+      data-container="brand-logo"
       href="#top"
-      aria-label="2minBooBoo home"
+      aria-label="2minBooboo home"
     >
-      <small>2MIN</small>
-      <span>BooBoo</span>
+      <span>2minBooboo</span>
     </a>
   );
 }
@@ -558,9 +699,15 @@ function ProductZoom({ product, media, fallbackMedia, onClose }) {
   }, [onClose]);
 
   return createPortal(
-    <div className="zoom-overlay" role="presentation" onClick={onClose}>
+    <div
+      className="zoom-overlay"
+      role="presentation"
+      onClick={onClose}
+      data-container="product-zoom-overlay"
+    >
       <div
         className="zoom-dialog"
+        data-container="product-zoom-dialog"
         role="dialog"
         aria-modal="true"
         aria-label={`ภาพขยาย ${product.name}`}
@@ -571,6 +718,7 @@ function ProductZoom({ product, media, fallbackMedia, onClose }) {
         </button>
         <div
           className="zoom-media"
+          data-container="product-zoom-media"
           style={{ "--series-color": getSeriesColor(product.name) }}
         >
           <img
@@ -582,7 +730,7 @@ function ProductZoom({ product, media, fallbackMedia, onClose }) {
             alt={`${product.name} ภาพขยาย`}
           />
         </div>
-        <div className="zoom-copy">
+        <div className="zoom-copy" data-container="product-zoom-copy">
           <span className="zoom-eyebrow">PRODUCT PREVIEW</span>
           <p>{categoryLabels[product.category] ?? product.category}</p>
           <h2>{product.name}</h2>
@@ -599,13 +747,21 @@ function ProductCard({ product, onAdd, compact = false }) {
   const [liked, setLiked] = useState(false);
   const [imageIndex, setImageIndex] = useState(0);
   const [zoomOpen, setZoomOpen] = useState(false);
-  const media = product.media?.length
-    ? product.media
+  const hoverImage =
+    product.hoverImage ?? product.media?.find((item) => item.kind === "hover")?.src;
+  const media = product.media?.filter((item) => item.kind !== "hover").length
+    ? product.media.filter((item) => item.kind !== "hover")
     : [{ src: product.image, kind: "product", flip: false }];
-  const activeMedia = media[imageIndex];
+  const activeMedia = media[imageIndex] ?? media[0];
   const activeFallbackMedia = getProductFallbackMedia(product, imageIndex);
   const hasMultipleImages = media.length > 1;
   const [mood, length] = getSeriesDetail(product.name);
+
+  useEffect(() => {
+    if (imageIndex >= media.length) {
+      setImageIndex(0);
+    }
+  }, [imageIndex, media.length]);
 
   useEffect(() => {
     if (!hasMultipleImages || zoomOpen) return undefined;
@@ -624,9 +780,10 @@ function ProductCard({ product, onAdd, compact = false }) {
   return (
     <article
       className={`product-card ${compact ? "product-card-compact" : ""}`}
+      data-container="product-card"
       style={{ "--series-color": getSeriesColor(product.name) }}
     >
-      <div className="product-media">
+      <div className="product-media" data-container="product-card-media">
         {product.isNew ? <span className="product-badge">NEW</span> : null}
         <button
           className={`heart-button ${liked ? "is-liked" : ""}`}
@@ -636,13 +793,13 @@ function ProductCard({ product, onAdd, compact = false }) {
           <Heart size={18} fill={liked ? "currentColor" : "none"} />
         </button>
         <button
-          className="product-image-button"
+          className={`product-image-button ${hoverImage ? "has-hover-image" : ""}`}
           onClick={() => setZoomOpen(true)}
           aria-label={`ซูมภาพ ${product.name}`}
         >
           <img
             key={activeMedia.src}
-            className={`${activeMedia.kind === "eye" ? "image-eye" : ""} ${
+            className={`product-main-image ${activeMedia.kind === "eye" ? "image-eye" : ""} ${
               activeMedia.flip ? "is-flipped" : ""
             }`}
             src={activeMedia.src}
@@ -652,6 +809,15 @@ function ProductCard({ product, onAdd, compact = false }) {
               swapBrokenImageToFallback(event, activeFallbackMedia?.src)
             }
           />
+          {hoverImage ? (
+            <img
+              className="product-hover-image"
+              src={hoverImage}
+              alt=""
+              aria-hidden="true"
+              loading="lazy"
+            />
+          ) : null}
           <span className="zoom-hint" aria-hidden="true">
             <ZoomIn size={16} />
           </span>
@@ -678,7 +844,7 @@ function ProductCard({ product, onAdd, compact = false }) {
           </>
         ) : null}
       </div>
-      <div className="product-copy">
+      <div className="product-copy" data-container="product-card-copy">
         <p className="product-category">
           {categoryLabels[product.category] ?? product.category}
         </p>
@@ -691,7 +857,7 @@ function ProductCard({ product, onAdd, compact = false }) {
           <Stars />
           <span>({18 + (product.name.length % 62)})</span>
         </div>
-        <div className="product-action">
+        <div className="product-action" data-container="product-card-action">
           <strong>฿{product.price.toLocaleString("th-TH")}</strong>
           <button onClick={() => onAdd(product)}>เพิ่มลงถุง</button>
         </div>
@@ -718,8 +884,8 @@ function ProductRail({ title, eyebrow, items, onAdd, action }) {
   };
 
   return (
-    <section className="product-section">
-      <div className="section-title-row">
+    <section className="product-section" data-container="product-rail-carousel">
+      <div className="section-title-row" data-container="product-rail-header">
         <div>
           <p>{eyebrow}</p>
           <h2>{title}</h2>
@@ -734,7 +900,7 @@ function ProductRail({ title, eyebrow, items, onAdd, action }) {
           </button>
         </div>
       </div>
-      <div className="product-rail" ref={railRef}>
+      <div className="product-rail" ref={railRef} data-container="product-rail-items">
         {items.map((product) => (
           <ProductCard key={product.id} product={product} onAdd={onAdd} compact />
         ))}
@@ -748,19 +914,27 @@ function ProductSystemCard({ product, tier, index }) {
     product.media?.find((item) => item.kind === "product") ??
     product.media?.[0] ??
     { src: product.image, flip: false };
+  const hoverImage =
+    product.hoverImage ?? product.media?.find((item) => item.kind === "hover")?.src;
   const meta = getProductSystemMeta(product.name);
   const fallbackMedia = getProductFallbackMedia(product, 0);
   const isFeatured =
     tier === "mini" && /flora|dahlia|orchid/i.test(product.name);
 
   return (
-    <article className={`system-product-card ${isFeatured ? "is-featured" : ""}`}>
+    <article
+      className={`system-product-card ${isFeatured ? "is-featured" : ""}`}
+      data-container={`product-system-card-${tier}`}
+    >
       {isFeatured ? (
         <span className="system-product-limited">NEW · LIMITED EDITION</span>
       ) : null}
-      <div className="system-product-image">
+      <div
+        className={`system-product-image ${hoverImage ? "has-hover-image" : ""}`}
+        data-container="product-system-card-media"
+      >
         <img
-          className={media.flip ? "is-flipped" : ""}
+          className={`system-product-main-image ${media.flip ? "is-flipped" : ""}`}
           src={media.src}
           alt={product.name}
           loading="lazy"
@@ -768,8 +942,17 @@ function ProductSystemCard({ product, tier, index }) {
             swapBrokenImageToFallback(event, fallbackMedia?.src)
           }
         />
+        {hoverImage ? (
+          <img
+            className="system-product-hover-image"
+            src={hoverImage}
+            alt=""
+            aria-hidden="true"
+            loading="lazy"
+          />
+        ) : null}
       </div>
-      <div className="system-product-copy">
+      <div className="system-product-copy" data-container="product-system-card-copy">
         <h3>
           {product.name}
           <span>{product.name.toLocaleUpperCase()}</span>
@@ -812,16 +995,16 @@ function ProductSystemSection({
   ].filter((group) => group.products.length);
 
   return (
-    <section className="product-system" id="product-system">
-      <div className="product-system-head">
+    <section className="product-system" id="product-system" data-container="product-system-all-sizes">
+      <div className="product-system-head" data-container="product-system-header">
         <div>
           <h2>ALL SIZE</h2>
         </div>
       </div>
 
       {groups.map((group) => (
-        <div className="product-system-group" key={group.key}>
-          <div className="product-system-subhead">
+        <div className="product-system-group" key={group.key} data-container={`product-system-${group.key}`}>
+          <div className="product-system-subhead" data-container={`product-system-${group.key}-header`}>
             <div>
               <strong>{group.label}</strong>
               <small>{group.note}</small>
@@ -830,7 +1013,7 @@ function ProductSystemSection({
               ดูหมวดนี้ <ArrowRight size={15} />
             </button>
           </div>
-          <div className="product-system-grid">
+          <div className="product-system-grid" data-container={`product-system-${group.key}-grid`}>
             {group.products.map((product, index) => (
               <ProductSystemCard
                 key={`${group.key}-${product.id}`}
@@ -870,20 +1053,20 @@ function ProductListingPage({
   );
 
   return (
-    <main className="products-page">
-      <section className="products-page-hero">
-        <p>2MINBOOBOO COLLECTION</p>
+    <main className="products-page" data-container="products-page">
+      <section className="products-page-hero" data-container="products-page-hero">
+        {/* <p>2MINBOOBOO COLLECTION</p>
         <h1>สินค้าทั้งหมด</h1>
         <span>
           เลือกดูขนตาทุกรุ่นแบบจัดเต็ม กดซูมรูปได้ และเพิ่มลงถุงได้จากหน้านี้เลย
         </span>
         <button onClick={onBackHome}>
           กลับหน้าแรก <ArrowRight />
-        </button>
+        </button> */}
       </section>
 
-      <section className="products-page-panel">
-        <div className="products-page-toolbar">
+      <section className="products-page-panel" data-container="products-page-catalog">
+        <div className="products-page-toolbar" data-container="products-page-toolbar">
           <div>
             <p>เลือกหมวดหมู่</p>
             <h2>{categoryLabels[activeCategory] ?? activeCategory}</h2>
@@ -891,7 +1074,7 @@ function ProductListingPage({
           <span>{visibleProducts.length} รายการ</span>
         </div>
 
-        <div className="products-page-tabs" role="tablist">
+        <div className="products-page-tabs" role="tablist" data-container="products-page-category-tabs">
           {pageCategories.map((item) => (
             <button
               key={item}
@@ -905,14 +1088,14 @@ function ProductListingPage({
           ))}
         </div>
 
-        <div className="products-grid">
+        <div className="products-grid" data-container="products-page-product-grid">
           {visibleProducts.map((product) => (
             <ProductCard key={product.id} product={product} onAdd={onAdd} />
           ))}
         </div>
 
         {visibleProducts.length === 0 ? (
-          <div className="products-empty">
+          <div className="products-empty" data-container="products-page-empty-state">
             <p>ยังไม่มีสินค้าในหมวดนี้</p>
             <button onClick={() => onCategoryChange(CATEGORY_ALL)}>
               ดูสินค้าทั้งหมด
@@ -947,15 +1130,16 @@ function CartDrawer({
   }, []);
 
   return createPortal(
-    <div className="drawer-overlay" role="presentation" onClick={onClose}>
+    <div className="drawer-overlay" role="presentation" onClick={onClose} data-container="cart-overlay">
       <aside
         className="cart-drawer"
+        data-container="cart-drawer"
         role="dialog"
         aria-modal="true"
         aria-label="ตะกร้าสินค้า"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="drawer-header">
+        <div className="drawer-header" data-container="cart-header">
           <div>
             <span>YOUR BAG</span>
             <h2>ตะกร้าของคุณ</h2>
@@ -964,7 +1148,7 @@ function CartDrawer({
             <X />
           </button>
         </div>
-        <div className="shipping-meter">
+        <div className="shipping-meter" data-container="cart-shipping-meter">
           <p>
             {remaining > 0
               ? `ช้อปอีก ฿${remaining.toLocaleString("th-TH")} เพื่อรับส่งฟรี`
@@ -975,7 +1159,7 @@ function CartDrawer({
           </div>
         </div>
         {items.length === 0 ? (
-          <div className="empty-cart">
+          <div className="empty-cart" data-container="cart-empty-state">
             <ShoppingBag size={42} strokeWidth={1.2} />
             <h3>ถุงยังว่างอยู่</h3>
             <p>เลือกทรงที่ใช่ แล้วพร้อมสวยใน 2 นาที</p>
@@ -983,11 +1167,12 @@ function CartDrawer({
           </div>
         ) : (
           <>
-            <div className="cart-items">
+            <div className="cart-items" data-container="cart-items-list">
               {items.map((item) => (
-                <article className="cart-item" key={item.id}>
+                <article className="cart-item" key={item.id} data-container="cart-item">
                   <div
                     className="cart-thumb"
+                    data-container="cart-item-media"
                     style={{ "--series-color": getSeriesColor(item.name) }}
                   >
                     <img
@@ -1002,7 +1187,7 @@ function CartDrawer({
                       }
                     />
                   </div>
-                  <div className="cart-item-copy">
+                  <div className="cart-item-copy" data-container="cart-item-copy">
                     <p>{categoryLabels[item.category] ?? item.category}</p>
                     <h3>{item.name}</h3>
                     <strong>฿{item.price.toLocaleString("th-TH")}</strong>
@@ -1032,10 +1217,10 @@ function CartDrawer({
                 </article>
               ))}
             </div>
-            <div className="cart-recommendations">
+            <div className="cart-recommendations" data-container="cart-recommendations">
               <h3>คุณอาจจะชอบ</h3>
               {recommendations.slice(0, 2).map((product) => (
-                <article key={product.id}>
+                <article key={product.id} data-container="cart-recommendation-card">
                   <img
                     src={product.media?.[0]?.src ?? product.image}
                     alt=""
@@ -1059,7 +1244,7 @@ function CartDrawer({
                 </article>
               ))}
             </div>
-            <div className="cart-summary">
+            <div className="cart-summary" data-container="cart-summary">
               <div>
                 <span>ยอดรวม</span>
                 <strong>฿{subtotal.toLocaleString("th-TH")}</strong>
@@ -1095,14 +1280,14 @@ function SearchOverlay({ products: allProducts, onClose, onAdd }) {
   }, []);
 
   return createPortal(
-    <div className="search-overlay" role="dialog" aria-modal="true">
-      <div className="search-top">
+    <div className="search-overlay" role="dialog" aria-modal="true" data-container="search-overlay">
+      <div className="search-top" data-container="search-header">
         <Logo />
         <button onClick={onClose} aria-label="ปิดการค้นหา">
           <X />
         </button>
       </div>
-      <div className="search-box">
+      <div className="search-box" data-container="search-input-box">
         <Search />
         <input
           autoFocus
@@ -1112,12 +1297,12 @@ function SearchOverlay({ products: allProducts, onClose, onAdd }) {
           aria-label="ค้นหาสินค้า"
         />
       </div>
-      <p className="search-label">
+      <p className="search-label" data-container="search-results-label">
         {query ? `ผลการค้นหา “${query}”` : "สินค้ายอดนิยม"}
       </p>
-      <div className="search-results">
+      <div className="search-results" data-container="search-results-list">
         {results.map((product) => (
-          <article key={product.id}>
+          <article key={product.id} data-container="search-result-card">
             <img
               src={product.media?.[0]?.src ?? product.image}
               alt=""
@@ -1154,6 +1339,7 @@ function App() {
   const [heroIndex, setHeroIndex] = useState(0);
   const [featuredCategory, setFeaturedCategory] = useState("MINI Size");
   const [miniShowcaseIndex, setMiniShowcaseIndex] = useState(0);
+  const [eyeShowcaseIndex, setEyeShowcaseIndex] = useState(0);
   const [storeProducts, setStoreProducts] = useState(products);
   const featuredRailRef = useRef(null);
   const catalogRailRef = useRef(null);
@@ -1194,8 +1380,12 @@ function App() {
   );
   const storefrontMiniProducts = useMemo(
     () =>
-      storefrontProducts.filter((product) => product.category === "MINI Size"),
+      storefrontProducts.filter((product) => product.category === CATEGORY_MINI),
     [storefrontProducts],
+  );
+  const miniShowcaseSourceProducts = useMemo(
+    () => storefrontMiniProducts.filter((product) => product.category === CATEGORY_MINI),
+    [storefrontMiniProducts],
   );
   const storefrontFullSizeProducts = useMemo(
     () =>
@@ -1280,19 +1470,27 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (showcaseProducts.length <= 1) return undefined;
+    if (miniShowcaseSourceProducts.length <= 1) return undefined;
     const timer = window.setInterval(() => {
       setMiniShowcaseIndex(
-        (index) => (index + 1) % showcaseProducts.length,
+        (index) => (index + 1) % miniShowcaseSourceProducts.length,
       );
     }, 3000);
     return () => window.clearInterval(timer);
-  }, [showcaseProducts.length]);
+  }, [miniShowcaseSourceProducts.length]);
 
   useEffect(() => {
-    if (!showcaseProducts.length) return;
-    setMiniShowcaseIndex((index) => index % showcaseProducts.length);
-  }, [showcaseProducts.length]);
+    if (!miniShowcaseSourceProducts.length) return;
+    setMiniShowcaseIndex((index) => index % miniShowcaseSourceProducts.length);
+  }, [miniShowcaseSourceProducts.length]);
+
+  useEffect(() => {
+    if (eyeShowcaseImages.length <= 1) return undefined;
+    const timer = window.setInterval(() => {
+      setEyeShowcaseIndex((index) => (index + 1) % eyeShowcaseImages.length);
+    }, 8000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     const media = howMediaRef.current;
@@ -1689,25 +1887,26 @@ function App() {
   };
 
   const activeHero = storefrontHeroSlides[heroIndex] ?? heroSlides[heroIndex];
-  const lookImages = storefrontLifestyleImages.slice(0, 4);
   const socialImages = [
     ...storefrontLifestyleImages,
     ...storefrontMiniProducts.flatMap((product) => product.media.slice(0, 1)),
   ].slice(0, 8);
   const miniShowcaseProducts = useMemo(() => {
-    if (!showcaseProducts.length) return [];
+    if (!miniShowcaseSourceProducts.length) return [];
     return Array.from(
-      { length: Math.min(5, showcaseProducts.length) },
+      { length: Math.min(5, miniShowcaseSourceProducts.length) },
       (_, offset) =>
-        showcaseProducts[
-          (miniShowcaseIndex + offset) % showcaseProducts.length
+        miniShowcaseSourceProducts[
+          (miniShowcaseIndex + offset) % miniShowcaseSourceProducts.length
         ],
     );
-  }, [miniShowcaseIndex, showcaseProducts]);
+  }, [miniShowcaseIndex, miniShowcaseSourceProducts]);
   const activeMiniShowcaseProduct = miniShowcaseProducts[0];
+  const activeEyeShowcaseImage =
+    eyeShowcaseImages[eyeShowcaseIndex % eyeShowcaseImages.length];
   const productSystemMiniProducts = useMemo(() => {
     const miniPriority = ["flora", "dahlia", "orchid"];
-    const sortedMini = [...miniProducts].sort((a, b) => {
+    const sortedMini = [...storefrontMiniProducts].sort((a, b) => {
       const aIndex = miniPriority.findIndex((item) =>
         a.name.toLocaleLowerCase().includes(item),
       );
@@ -1719,22 +1918,22 @@ function App() {
     });
 
     return sortedMini.slice(0, 11);
-  }, []);
+  }, [storefrontMiniProducts]);
   const productSystemFullProducts = useMemo(
-    () => fullSizeProducts.slice(0, 4),
-    [],
+    () => storefrontFullSizeProducts.slice(0, 4),
+    [storefrontFullSizeProducts],
   );
   const productSystemMediumProducts = useMemo(
     () =>
-      products
+      storefrontProducts
         .filter((product) => product.category === CATEGORY_MEDIUM)
         .slice(0, 4),
-    [],
+    [storefrontProducts],
   );
   const nextMiniShowcase = () => {
-    if (!showcaseProducts.length) return;
+    if (!miniShowcaseSourceProducts.length) return;
     setMiniShowcaseIndex(
-      (index) => (index + 1) % showcaseProducts.length,
+      (index) => (index + 1) % miniShowcaseSourceProducts.length,
     );
   };
 
@@ -1759,16 +1958,50 @@ function App() {
       <AdminPanel
         staticProducts={products}
         onProductsChange={(nextProducts) =>
-          setStoreProducts(nextProducts?.length ? nextProducts : products)
+          setStoreProducts(
+            nextProducts?.length
+              ? ensureDeploySafeProductImages(nextProducts)
+              : products,
+          )
         }
       />
     );
   }
 
   return (
-    <div id="top">
-      <div className="announcement-bar" aria-label="โปรโมชั่น">
-        <div className="announcement-track">
+    <div id="top" data-container="site-root">
+      <HeaderContainer
+        LogoComponent={Logo}
+        cartCount={cartCount}
+        categoryOrder={categoryOrder}
+        categoryLabels={categoryLabels}
+        categoryAll={CATEGORY_ALL}
+        categoryReal={CATEGORY_REAL}
+        categoryHow={CATEGORY_HOW}
+        categoryMedium={CATEGORY_MEDIUM}
+        categoryFull={CATEGORY_FULL}
+        megaOpen={megaOpen}
+        mobileMenuOpen={mobileMenuOpen}
+        storefrontMiniProducts={storefrontMiniProducts}
+        onToggleMega={() => setMegaOpen((value) => !value)}
+        onOpenSearch={() => setSearchOpen(true)}
+        onOpenCart={() => setCartOpen(true)}
+        onOpenMobileMenu={() => setMobileMenuOpen(true)}
+        onCloseMobileMenu={() => setMobileMenuOpen(false)}
+        onSelectCategory={selectCategory}
+        onSelectFeatured={selectFeatured}
+        onNavigateHome={() => navigateToRoute("home")}
+        onNavigateProducts={() => {
+          setMegaOpen(false);
+          navigateToRoute("products");
+        }}
+        getProductFallbackMedia={getProductFallbackMedia}
+        swapBrokenImageToFallback={swapBrokenImageToFallback}
+      />
+      {false ? (
+      <>
+      <div className="announcement-bar" data-container="announcement-bar" aria-label="โปรโมชั่น">
+        <div className="announcement-track" data-container="announcement-marquee-track">
           {[0, 1, 2, 3].map((copy) => (
             <div className="announcement-group" key={copy} aria-hidden={copy > 0}>
               <span>ส่งฟรีทุกออเดอร์ ไม่มีขั้นต่ำ</span>
@@ -1784,14 +2017,14 @@ function App() {
         </div>
       </div>
 
-      <div className="audience-tabs" aria-label="เลือกประสบการณ์">
+      <div className="audience-tabs" data-container="audience-tabs" aria-label="เลือกประสบการณ์">
         <button className="is-active">2MINBOOBOO</button>
         <button onClick={() => selectCategory("MINI Size")}>LASH LOVERS</button>
         <button onClick={() => selectCategory(CATEGORY_MEDIUM)}>RESELLERS</button>
       </div>
 
-      <header className="site-header tatti-header">
-        <div className="tatti-header-side">
+      <header className="site-header tatti-header" data-container="site-header-main">
+        <div className="tatti-header-side" data-container="site-header-left-tools">
           <button
             className="header-menu-button"
             onClick={() =>
@@ -1801,7 +2034,6 @@ function App() {
             }
             aria-label="เปิดเมนู"
           >
-            <Menu />
           </button>
           <button
             className="header-search-box"
@@ -1815,7 +2047,7 @@ function App() {
 
         <Logo />
 
-        <nav className="tatti-header-side tatti-header-actions" aria-label="เมนูบัญชีและตะกร้า">
+        <nav className="tatti-header-side tatti-header-actions" data-container="site-header-right-actions" aria-label="เมนูบัญชีและตะกร้า">
           <button onClick={() => setSearchOpen(true)} aria-label="ค้นหา">
             <Search />
           </button>
@@ -1840,7 +2072,7 @@ function App() {
         </button>
 
         {megaOpen ? (
-          <div className="mega-menu tatti-mega-menu">
+          <div className="mega-menu tatti-mega-menu" data-container="mega-menu-shop">
             <div>
               <span>SHOP BY FORMAT</span>
               {categoryOrder
@@ -1900,7 +2132,7 @@ function App() {
         ) : null}
       </header>
 
-      <nav className="tatti-category-nav" aria-label="หมวดหมู่สินค้า">
+      <nav className="tatti-category-nav" data-container="category-navigation" aria-label="หมวดหมู่สินค้า">
         <button
           className={megaOpen ? "is-active" : ""}
           onClick={() => setMegaOpen((value) => !value)}
@@ -1918,7 +2150,7 @@ function App() {
       </nav>
 
       {mobileMenuOpen ? (
-        <div className="mobile-menu">
+        <div className="mobile-menu" data-container="mobile-menu-drawer">
           <div>
             <Logo light />
             <button
@@ -1962,6 +2194,9 @@ function App() {
         </div>
       ) : null}
 
+      </>
+      ) : null}
+
       {searchOpen ? (
         <SearchOverlay
           products={storefrontProducts}
@@ -1993,15 +2228,17 @@ function App() {
           onBackHome={() => navigateToRoute("home")}
         />
       ) : (
-      <main>
-        <section className="hero tatti-hero">
+      <main data-container="homepage-main">
+        <HeroContainer heroImage={heroOrangeProducts} logoImage={heroWhiteLogo} />
+        {false ? (
+        <section className="hero tatti-hero" data-container="hero-main">
           <img
             className="hero-atmosphere"
             src={heroOrangeProducts}
             alt=""
             aria-hidden="true"
           />
-          <div className="hero-copy">
+          <div className="hero-copy" data-container="hero-copy">
             <p>NO GLUE • NO MESS • 2 MINUTES</p>
             <img
               className="hero-logo-image"
@@ -2009,17 +2246,20 @@ function App() {
               alt="2minBooBoo"
             />
             <h1>
-              <span className="hero-title-line">2Minutes to Love Yourself.</span>
-              <span className="hero-title-line">Bueaty with No Limits.</span>
+              <span className="hero-title-line">2Minutes to Love Yourself</span>
+              <span className="hero-title-line">Bueaty with No Limits</span>
             </h1>
             <span>ขนตามีกาวในตัว เริ่มต้นจากขนตาปลอมแบบมีกาวในตัว</span>
-            <div className="hero-feature-pills">
+            <div className="hero-feature-pills" data-container="hero-feature-pills">
               <i>มีกาวในตัว ไม่ต้องใช้กาว • สวยได้ใน 2 นาที</i>
             </div>
           </div>
         </section>
+        ) : null}
 
-        <section className="trust-strip" aria-label="จุดเด่นสินค้า">
+        <TrustStripContainer />
+        {false ? (
+        <section className="trust-strip" aria-label="จุดเด่นสินค้า" data-container="trust-strip-benefits">
           <div>
             <Clock3 />
             <span>
@@ -2042,8 +2282,14 @@ function App() {
             </span>
           </div>
         </section>
+        ) : null}
 
-        <section className="category-rail tatti-collection-tiles" aria-label="Shop by category">
+        <CategoryTilesContainer
+          categoryTiles={categoryTiles}
+          onSelectCategory={selectCategory}
+        />
+        {false ? (
+        <section className="category-rail tatti-collection-tiles" aria-label="Shop by category" data-container="category-tiles">
           {categoryTiles.map(({ label, note, category: itemCategory, icon: Icon }) => (
             <button key={label} onClick={() => selectCategory(itemCategory)}>
               <Icon />
@@ -2052,13 +2298,14 @@ function App() {
             </button>
           ))}
         </section>
+        ) : null}
 
-        <section className="lash-explorer" id="best-sellers">
-          <div className="section-centered-title">
+        <section className="lash-explorer" id="best-sellers" data-container="best-sellers-explorer">
+          <div className="section-centered-title" data-container="best-sellers-heading">
             <p>SHOP OUR FAVES</p>
             <h2>Trending</h2>
           </div>
-          <div className="explorer-tabs" role="tablist">
+          <div className="explorer-tabs" role="tablist" data-container="best-sellers-tabs">
             {exploreCategories.map((item) => (
               <button
                 key={item.value}
@@ -2075,6 +2322,7 @@ function App() {
             className={`explorer-controls ${
               featuredProductsFitInDesktop ? "is-short" : ""
             }`}
+            data-container="best-sellers-carousel-controls"
           >
             <button
               className="explorer-arrow"
@@ -2096,6 +2344,7 @@ function App() {
               featuredProductsFitInDesktop ? "is-centered" : ""
             }`}
             ref={featuredRailRef}
+            data-container="best-sellers-product-carousel"
             aria-label="Explore Our Lashes เลื่อนได้ซ้ายขวา"
             onPointerDown={handleFeaturedPointerDown}
             onPointerMove={handleFeaturedPointerMove}
@@ -2116,8 +2365,10 @@ function App() {
           </div>
         </section>
 
-        <section className="brand-marquee" aria-label="จุดเด่นของ 2minBooBoo">
-          <div className="brand-marquee-track">
+        <BrandMarqueeContainer messages={marqueeMessages} />
+        {false ? (
+        <section className="brand-marquee" aria-label="จุดเด่นของ 2minBooBoo" data-container="brand-marquee">
+          <div className="brand-marquee-track" data-container="brand-marquee-track">
             {[0, 1, 2, 3].map((copy) => (
               <div className="brand-marquee-group" key={copy} aria-hidden={copy > 0}>
                 {marqueeMessages.map((message) => (
@@ -2130,22 +2381,27 @@ function App() {
             ))}
           </div>
         </section>
+        ) : null}
 
         {activeMiniShowcaseProduct ? (
           <section
             className="tatti-feature-collection"
+            data-container="mini-feature-collection"
             style={{ "--series-color": getSeriesColor(activeMiniShowcaseProduct.name) }}
           >
             <button
               className="tatti-feature-banner"
+              data-container="mini-feature-large-card"
               onClick={() => selectCategory(activeMiniShowcaseProduct.category)}
             >
               <img
+                className="tatti-feature-eye-image"
                 src={
+                  activeEyeShowcaseImage?.src ??
                   activeMiniShowcaseProduct.media?.[0]?.src ??
                   activeMiniShowcaseProduct.image
                 }
-                alt={activeMiniShowcaseProduct.name}
+                alt={activeEyeShowcaseImage?.alt ?? activeMiniShowcaseProduct.name}
                 loading="lazy"
                 onError={(event) =>
                   swapBrokenImageToFallback(
@@ -2155,17 +2411,10 @@ function App() {
                 }
               />
               <span>
-                <small>
-                  {categoryLabels[activeMiniShowcaseProduct.category] ??
-                    activeMiniShowcaseProduct.category}
-                </small>
-                <strong>
-                  {activeMiniShowcaseProduct.name}
-                </strong>
                 <em>Discover now</em>
               </span>
             </button>
-            <div className="tatti-feature-products">
+            <div className="tatti-feature-products" data-container="mini-feature-side-products">
               {miniShowcaseProducts.slice(1, 5).map((product) => (
                 <ProductCard
                   key={`feature-${product.id}`}
@@ -2185,8 +2434,8 @@ function App() {
           </section>
         ) : null}
 
-        <section className="campaign-split">
-          <div className="campaign-media">
+        <section className="campaign-split" data-container="campaign-split-real-look">
+          <div className="campaign-media" data-container="campaign-media">
             <img
               src={
                 storefrontLifestyleImages.find((product) =>
@@ -2208,7 +2457,7 @@ function App() {
               }
             />
           </div>
-          <div className="campaign-copy">
+          <div className="campaign-copy" data-container="campaign-copy">
             <p>MADE FOR REAL LIFE</p>
             <h2>ขนตาที่ทำให้ทุกวัน<br />รู้สึกพิเศษขึ้น</h2>
             <span>
@@ -2221,42 +2470,24 @@ function App() {
           </div>
         </section>
 
-        <ProductRail
-          title="Shop Medium Size"
-          eyebrow="กล่องกลาง · รุ่นขายดี"
-          items={productSystemMediumProducts}
-          onAdd={addToCart}
-          action={
-            <button className="collection-show-all" onClick={() => selectCategory(CATEGORY_MEDIUM)}>
-              Shop all
-            </button>
-          }
-        />
-
-        <section className="look-selector" id="real-looks">
-          <div className="section-centered-title">
-            <p>REAL LOOKS</p>
-            <h2>Shop by Collection</h2>
+        <section className="look-selector" id="real-looks" data-container="real-looks-video-collection">
+          <div className="section-centered-title" data-container="real-looks-heading">
+            <h2>REAL LOOKS</h2>
           </div>
-          <div className="look-grid">
-            {lookImages.map((product, index) => (
-              <article key={product.id}>
-                <img
-                  src={product.image}
-                  alt={product.name}
-                  loading="lazy"
-                  onError={(event) =>
-                    swapBrokenImageToFallback(
-                      event,
-                      getProductFallbackMedia(product, 0)?.src,
-                    )
-                  }
+          <div className="look-grid" data-container="real-looks-video-grid">
+            {realLookVideos.map((look) => (
+              <article key={look.id}>
+                <video
+                  src={look.src}
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  preload="metadata"
+                  aria-label={look.label}
                 />
                 <div>
-                  <span>0{index + 1}</span>
-                  <h3>
-                    {["NATURAL", "SOFT GLAM", "BOLD", "NIGHT OUT"][index]}
-                  </h3>
+                  <h3>{look.label}</h3>
                   <button onClick={() => selectCategory(CATEGORY_REAL)}>
                     SHOP THE LOOK <ArrowRight size={15} />
                   </button>
@@ -2266,8 +2497,8 @@ function App() {
           </div>
         </section>
 
-        <section className="how-to" id="how-to">
-          <div className="how-media" ref={howMediaRef}>
+        <section className="how-to" id="how-to" data-container="how-to-section">
+          <div className="how-media" ref={howMediaRef} data-container="how-to-video-panel">
             <video
               ref={howVideoRef}
               className="how-video"
@@ -2309,13 +2540,13 @@ function App() {
               <Play fill="currentColor" />
             </button>
           </div>
-          <div className="how-copy">
-            <p>THE 2-MINUTE ROUTINE</p>
+          <div className="how-copy" data-container="how-to-step-copy">
+            {/* <p>THE 2-MINUTE ROUTINE</p> */}
             <h2>ติดง่ายใน 3 ขั้นตอน</h2>
             {[
               ["01", "เลือกทรง", "เลือกความยาวและความฟูให้เข้ากับลุค"],
               ["02", "วางช่อขนตา", "วางใต้แนวขนตาจริงจากหางเข้าหัวตา"],
-              ["03", "หนีบให้แนบ", "ใช้แหนบกดเบา ๆ เท่านี้ก็พร้อมสวย"],
+              ["03", "กดให้แน่น", "ใช้แหนบกดเบา ๆ เท่านี้ก็พร้อมสวย"],
             ].map(([number, title, body]) => (
               <article key={number}>
                 <strong>{number}</strong>
@@ -2338,13 +2569,20 @@ function App() {
           </div>
         </section>
 
-        <section className="review-band">
+        <section className="review-band" data-container="review-band">
           <div>
             <Stars />
             <blockquote>
-              “มือใหม่มาก แต่ติดครั้งแรกก็รอด เบา ตาไม่หนัก และดูหวานขึ้นแบบไม่โป๊ะ”
+              “แบรนด์ขนตาแรกที่ลองใส่นอนค่ำคืน นุ่มบางเบาสบายจริง”
             </blockquote>
-            <cite>— May, Bangkok Babe lover</cite>
+            <Stars count={4} />
+            <blockquote>
+              “ไม่ระคายเคืองจ่ายไปเรียนก็ไม่โป๊ะ”
+            </blockquote>
+            <Stars count={4} />
+            <blockquote>
+              “พกพาง่ายสามารถเปลี่ยนลุคในห้องน้ำไม่ถึง2นาที”
+            </blockquote>
           </div>
           <div className="review-stats">
             <strong>4.9</strong>
@@ -2352,7 +2590,7 @@ function App() {
             <Stars />
           </div>
         </section>
-
+{/* 
         <ProductRail
           title="Best Selling Big Size"
           eyebrow="FULL SIZE"
@@ -2363,7 +2601,7 @@ function App() {
               Shop all
             </button>
           }
-        />
+        /> */}
 
         <ProductSystemSection
           miniItems={productSystemMiniProducts}
@@ -2372,13 +2610,13 @@ function App() {
           onSelectCategory={selectCategory}
         />
 
-        <section className="social-section">
-          <div className="section-centered-title">
+        <section className="social-section" data-container="social-proof-gallery">
+          <div className="section-centered-title" data-container="social-proof-heading">
             <p>@2MINBOOBOO</p>
             <h2>สวยจริงในทุกวัน</h2>
             <span>แชร์ลุคของคุณกับ #2minBooBoo</span>
           </div>
-          <div className="social-grid">
+          <div className="social-grid" data-container="social-proof-grid">
             {socialImages.map((product, index) => (
               <a href="#top" key={`${product.id}-${index}`} aria-label="Instagram">
                 <img
@@ -2400,8 +2638,10 @@ function App() {
       </main>
       )}
 
-      <footer>
-        <div className="footer-newsletter">
+      <FooterContainer LogoComponent={Logo} />
+      {false ? (
+      <footer data-container="site-footer">
+        <div className="footer-newsletter" data-container="footer-newsletter">
           <p>JOIN THE BOOBOO CLUB</p>
           <h2>รับข่าวทรงใหม่และโปรพิเศษก่อนใคร</h2>
           <form onSubmit={(event) => event.preventDefault()}>
@@ -2411,7 +2651,7 @@ function App() {
             </button>
           </form>
         </div>
-        <div className="footer-main">
+        <div className="footer-main" data-container="footer-main-links">
           <div>
             <Logo light />
             <p>ขนตาสำหรับทุกวัน ทุกลุค และทุกเวอร์ชันของคุณ</p>
@@ -2435,12 +2675,13 @@ function App() {
             <a href="#top">Shopee</a>
           </div>
         </div>
-        <div className="footer-bottom">
+        <div className="footer-bottom" data-container="footer-bottom-legal">
           <span>© 2026 2minBooBoo</span>
           <strong>“2 minutes, love yourself.”</strong>
           <span>Thailand • No Glue • Beauty with no limits</span>
         </div>
       </footer>
+      ) : null}
     </div>
   );
 }

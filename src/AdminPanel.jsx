@@ -3,6 +3,7 @@ import {
   fetchStorefrontProducts,
   hideAdminProduct,
   importStaticCatalog,
+  isAdminSession,
   isSupabaseReady,
   loginAdmin,
   logoutAdmin,
@@ -40,6 +41,27 @@ function ProductForm({
   onHide,
 }) {
   const media = product?.media ?? [];
+  const previewSrc = useMemo(
+    () => (file ? URL.createObjectURL(file) : ""),
+    [file],
+  );
+
+  useEffect(() => {
+    if (!previewSrc) return undefined;
+    return () => URL.revokeObjectURL(previewSrc);
+  }, [previewSrc]);
+
+  const imageSlots = Array.from(
+    { length: Math.max(2, media.length || 0) },
+    (_, index) =>
+      media[index] ?? {
+        src: "",
+        kind: index === 1 ? "hover" : "product",
+        flip: false,
+      },
+  );
+  const getImageSlotLabel = (index) =>
+    index === 0 ? "Main" : index === 1 ? "Image 2 / Hover" : `Image ${index + 1}`;
 
   return (
     <form className="admin-editor-card" onSubmit={onSave}>
@@ -146,7 +168,7 @@ function ProductForm({
         <div>
           <p>เลือกรูปที่ต้องการแก้</p>
           <div className="admin-image-strip">
-            {(media.length ? media : [{ src: "" }]).map((item, index) => (
+            {imageSlots.map((item, index) => (
               <button
                 type="button"
                 key={`${item.src || "blank"}-${index}`}
@@ -154,7 +176,7 @@ function ProductForm({
                 onClick={() => onImageIndexChange(index)}
               >
                 {item.src ? <img src={item.src} alt="" /> : <span>+</span>}
-                <small>รูป {index + 1}</small>
+                <small>{getImageSlotLabel(index)}</small>
               </button>
             ))}
           </div>
@@ -177,7 +199,7 @@ function ProductForm({
         </label>
         <div className="admin-preview">
           {file ? (
-            <img src={URL.createObjectURL(file)} alt="" />
+            <img src={previewSrc} alt="" />
           ) : imageUrl ? (
             <img src={imageUrl} alt="" />
           ) : (
@@ -206,7 +228,7 @@ export default function AdminPanel({ staticProducts, onProductsChange }) {
   const [draft, setDraft] = useState(emptyProduct);
   const [imageIndex, setImageIndex] = useState(0);
   const [imageUrl, setImageUrl] = useState("");
-  const [file, setFile] = useState(null);
+  const [filesBySlot, setFilesBySlot] = useState({});
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -214,6 +236,25 @@ export default function AdminPanel({ staticProducts, onProductsChange }) {
     () => products.find((product) => product.id === selectedId),
     [products, selectedId],
   );
+
+  const clearAdminSession = (
+    nextMessage = "Session หมดอายุ กรุณา login ใหม่อีกครั้ง",
+  ) => {
+    window.localStorage.removeItem(ADMIN_TOKEN_KEY);
+    setToken("");
+    setProducts([]);
+    setSelectedId("");
+    setDraft(emptyProduct);
+    setImageIndex(0);
+    setImageUrl("");
+    setFilesBySlot({});
+    setMessage(nextMessage);
+  };
+
+  const isUnauthorizedError = (error) =>
+    String(error?.message || error || "")
+      .toLowerCase()
+      .includes("unauthorized");
 
   const loadProducts = async () => {
     const remoteProducts = await fetchStorefrontProducts();
@@ -225,9 +266,37 @@ export default function AdminPanel({ staticProducts, onProductsChange }) {
   };
 
   useEffect(() => {
-    if (token) {
-      loadProducts();
-    }
+    if (!token) return undefined;
+
+    let cancelled = false;
+
+    const bootAdmin = async () => {
+      setBusy(true);
+      try {
+        const isSessionActive = await isAdminSession(token);
+
+        if (cancelled) return;
+
+        if (!isSessionActive) {
+          clearAdminSession("Session หมดอายุ กรุณา login ใหม่อีกครั้ง");
+          return;
+        }
+
+        await loadProducts();
+      } catch (error) {
+        if (!cancelled) {
+          clearAdminSession("ตรวจสอบ session ไม่สำเร็จ กรุณา login ใหม่");
+        }
+      } finally {
+        if (!cancelled) setBusy(false);
+      }
+    };
+
+    bootAdmin();
+
+    return () => {
+      cancelled = true;
+    };
   }, [token]);
 
   useEffect(() => {
@@ -242,13 +311,66 @@ export default function AdminPanel({ staticProducts, onProductsChange }) {
     });
     setImageIndex(0);
     setImageUrl(selectedProduct.media?.[0]?.src ?? selectedProduct.image ?? "");
-    setFile(null);
+    setFilesBySlot({});
   }, [selectedProduct]);
 
   useEffect(() => {
     setImageUrl(draft.media?.[imageIndex]?.src ?? "");
-    setFile(null);
-  }, [imageIndex]);
+  }, [draft.media, imageIndex]);
+
+  const currentFile = filesBySlot[imageIndex] ?? null;
+
+  const getMediaKind = (slotIndex, mediaItem) =>
+    slotIndex === 1 ? "hover" : mediaItem?.kind || "product";
+
+  const updateDraftMediaSlot = (slotIndex, patch) => {
+    setDraft((currentDraft) => {
+      const nextMedia = [...(currentDraft.media ?? [])];
+
+      while (nextMedia.length <= slotIndex) {
+        const nextIndex = nextMedia.length;
+        nextMedia.push({
+          src: "",
+          kind: nextIndex === 1 ? "hover" : "product",
+          flip: false,
+        });
+      }
+
+      const currentItem = nextMedia[slotIndex] ?? {};
+      const nextItem = {
+        src: currentItem.src || "",
+        kind: getMediaKind(slotIndex, currentItem),
+        flip: Boolean(currentItem.flip),
+        ...patch,
+      };
+
+      nextMedia[slotIndex] = nextItem;
+
+      return {
+        ...currentDraft,
+        media: nextMedia,
+        image: slotIndex === 0 ? nextItem.src : currentDraft.image,
+        hoverImage: slotIndex === 1 ? nextItem.src : currentDraft.hoverImage,
+      };
+    });
+  };
+
+  const handleImageUrlChange = (nextUrl) => {
+    setImageUrl(nextUrl);
+    updateDraftMediaSlot(imageIndex, { src: nextUrl });
+  };
+
+  const handleImageFileChange = (nextFile) => {
+    setFilesBySlot((currentFiles) => {
+      const nextFiles = { ...currentFiles };
+      if (nextFile) {
+        nextFiles[imageIndex] = nextFile;
+      } else {
+        delete nextFiles[imageIndex];
+      }
+      return nextFiles;
+    });
+  };
 
   const handleLogin = async (event) => {
     event.preventDefault();
@@ -272,6 +394,7 @@ export default function AdminPanel({ staticProducts, onProductsChange }) {
     setToken("");
     setProducts([]);
     setSelectedId("");
+    setFilesBySlot({});
   };
 
   const handleImport = async () => {
@@ -282,6 +405,10 @@ export default function AdminPanel({ staticProducts, onProductsChange }) {
       await loadProducts();
       setMessage("นำเข้าสินค้าเดิมเข้า Supabase แล้ว");
     } catch (error) {
+      if (isUnauthorizedError(error)) {
+        clearAdminSession("Session หมดอายุ กรุณา login ใหม่อีกครั้ง");
+        return;
+      }
       setMessage(error.message || "นำเข้าสินค้าไม่สำเร็จ");
     } finally {
       setBusy(false);
@@ -294,23 +421,49 @@ export default function AdminPanel({ staticProducts, onProductsChange }) {
     setMessage("");
     try {
       await saveAdminProduct(token, draft);
-      if (file) {
-        await uploadAdminProductImage(token, draft.id, file, {
-          kind: draft.media?.[imageIndex]?.kind || "product",
-          flip: Boolean(draft.media?.[imageIndex]?.flip),
-          sortOrder: imageIndex,
+
+      const uploadedIndexes = new Set();
+      const pendingFileEntries = Object.entries(filesBySlot).filter(
+        ([, pendingFile]) => pendingFile,
+      );
+
+      for (const [slotKey, pendingFile] of pendingFileEntries) {
+        const slotIndex = Number(slotKey);
+        const mediaItem = draft.media?.[slotIndex] ?? {};
+
+        await uploadAdminProductImage(token, draft.id, pendingFile, {
+          kind: getMediaKind(slotIndex, mediaItem),
+          flip: Boolean(mediaItem.flip),
+          sortOrder: slotIndex,
         });
-      } else if (imageUrl) {
-        await saveAdminProductImageUrl(token, draft.id, imageUrl, {
-          kind: draft.media?.[imageIndex]?.kind || "product",
-          flip: Boolean(draft.media?.[imageIndex]?.flip),
-          sortOrder: imageIndex,
+
+        uploadedIndexes.add(slotIndex);
+      }
+
+      const mediaWithUrls = (draft.media ?? [])
+        .map((mediaItem, slotIndex) => ({ mediaItem, slotIndex }))
+        .filter(
+          ({ mediaItem, slotIndex }) =>
+            mediaItem?.src && !uploadedIndexes.has(slotIndex),
+        );
+
+      for (const { mediaItem, slotIndex } of mediaWithUrls) {
+        await saveAdminProductImageUrl(token, draft.id, mediaItem.src, {
+          kind: getMediaKind(slotIndex, mediaItem),
+          flip: Boolean(mediaItem.flip),
+          sortOrder: slotIndex,
         });
       }
+
+      setFilesBySlot({});
       await loadProducts();
       setSelectedId(draft.id);
       setMessage("บันทึกสำเร็จ");
     } catch (error) {
+      if (isUnauthorizedError(error)) {
+        clearAdminSession("Session หมดอายุ กรุณา login ใหม่อีกครั้ง");
+        return;
+      }
       setMessage(error.message || "บันทึกไม่สำเร็จ");
     } finally {
       setBusy(false);
@@ -325,6 +478,10 @@ export default function AdminPanel({ staticProducts, onProductsChange }) {
       await loadProducts();
       setMessage("ซ่อนสินค้าแล้ว");
     } catch (error) {
+      if (isUnauthorizedError(error)) {
+        clearAdminSession("Session หมดอายุ กรุณา login ใหม่อีกครั้ง");
+        return;
+      }
       setMessage(error.message || "ซ่อนสินค้าไม่สำเร็จ");
     } finally {
       setBusy(false);
@@ -412,7 +569,7 @@ export default function AdminPanel({ staticProducts, onProductsChange }) {
               });
               setImageIndex(0);
               setImageUrl("");
-              setFile(null);
+              setFilesBySlot({});
             }}
           >
             + เพิ่มสินค้าใหม่
@@ -440,9 +597,9 @@ export default function AdminPanel({ staticProducts, onProductsChange }) {
           imageIndex={imageIndex}
           onImageIndexChange={setImageIndex}
           imageUrl={imageUrl}
-          onImageUrlChange={setImageUrl}
-          file={file}
-          onFileChange={setFile}
+          onImageUrlChange={handleImageUrlChange}
+          file={currentFile}
+          onFileChange={handleImageFileChange}
           saving={busy}
           onSave={handleSave}
           onHide={handleHide}

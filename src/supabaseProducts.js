@@ -7,6 +7,9 @@ const sortByOrder = (items = []) =>
 
 export const normalizeDbProduct = (row) => {
   const images = sortByOrder(row.product_images ?? []);
+  const hoverImage =
+    images.find((image) => image.kind === "hover")?.image_url ??
+    images[1]?.image_url;
   const media = images.map((image) => ({
     src: image.image_url,
     kind: image.kind || "product",
@@ -19,6 +22,7 @@ export const normalizeDbProduct = (row) => {
     image: media[0]?.src ?? "",
     images: media.map((item) => item.src),
     media,
+    hoverImage,
     name: row.name,
     price: Number(row.price ?? 0),
     isNew: Boolean(row.is_new),
@@ -61,6 +65,17 @@ export const loginAdmin = async ({ username, password }) => {
 export const logoutAdmin = async (token) => {
   if (!supabase || !token) return;
   await supabase.rpc("admin_logout", { p_token: token });
+};
+
+export const isAdminSession = async (token) => {
+  if (!supabase || !token) return false;
+
+  const { data, error } = await supabase.rpc("admin_is_session", {
+    p_token: token,
+  });
+
+  if (error) return false;
+  return Boolean(data);
 };
 
 export const saveAdminProduct = async (token, product) => {
@@ -122,6 +137,9 @@ export const uploadAdminProductImage = async (
 
   const response = await fetch(`${SUPABASE_URL}/functions/v1/admin-upload-product-image`, {
     method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
     body: formData,
   });
   const payload = await response.json();
@@ -154,7 +172,15 @@ export const importStaticCatalog = async (token, staticProducts) => {
       sortOrder: index,
     });
 
-    for (const [mediaIndex, mediaItem] of (product.media ?? []).entries()) {
+    const mediaItems = [
+      ...(product.media ?? []),
+      ...(product.hoverImage &&
+      !(product.media ?? []).some((mediaItem) => mediaItem.src === product.hoverImage)
+        ? [{ src: product.hoverImage, kind: "hover", flip: false }]
+        : []),
+    ];
+
+    for (const [mediaIndex, mediaItem] of mediaItems.entries()) {
       await saveAdminProductImageUrl(token, product.id, mediaItem.src, {
         kind: mediaItem.kind || "product",
         flip: Boolean(mediaItem.flip),

@@ -17,7 +17,7 @@
   --muted: #8c7b6e;
   --line: #efe3d8;
   --warm-border: #f6d9b6;
-  --brand-grad: linear-gradient(118deg, #fbae17 0%, #f5811e 52%, #ee5324 100%);
+  --brand-grad: linear-gradient(118deg, #fbae17 0%, #f5811e 52%, #e74d01 100%);
   --on-orange: #fffdfb;
   --max: 1460px;
   color: var(--ink);
@@ -114,12 +114,13 @@ img {
 
 .logo {
   display: inline-flex;
-  flex-direction: column;
-  align-items: flex-start;
+  flex-direction: row;
+  align-items: center;
   color: var(--orange);
   font-family: "Cormorant Garamond", Georgia, serif;
   font-style: italic;
-  line-height: .7;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .logo-light {
@@ -136,9 +137,9 @@ img {
 }
 
 .logo span {
-  font-size: 35px;
+  font-size: 36px;
   font-weight: 700;
-  letter-spacing: -.04em;
+  letter-spacing: -.055em;
 }
 
 .main-nav {
@@ -1053,14 +1054,17 @@ img {
   background: var(--cream);
 }
 
-.look-grid img {
+.look-grid img,
+.look-grid video {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
   transition: scale .5s ease;
 }
 
-.look-grid article:hover img {
+.look-grid article:hover img,
+.look-grid article:hover video {
   scale: 1.04;
 }
 
@@ -4769,17 +4773,17 @@ main {
 }
 
 .tatti-feature-collection {
-  padding: clamp(54px, 6vw, 86px) clamp(24px, 3.2vw, 64px);
+  padding: clamp(54px, 1vw, 60px) clamp(24px, 3.2vw, 64px);
   display: grid;
-  grid-template-columns: minmax(420px, 1.1fr) minmax(0, 1fr);
-  gap: 22px;
+  grid-template-columns: minmax(320px, 1fr) minmax(0, 1fr);
+  gap: 20px;
   border-top: 1px solid var(--line);
   background: var(--paper);
 }
 
 .tatti-feature-banner {
   position: relative;
-  min-height: 520px;
+  min-height: 500px;
   padding: 0;
   overflow: hidden;
   border: 1px solid var(--line);
@@ -4863,6 +4867,14 @@ main {
   background: var(--orange);
   color: var(--on-orange);
   cursor: pointer;
+}
+
+.header-menu-button {
+  display: none;
+}
+
+.tatti-header-actions > button:not(.bag-button) {
+  display: none;
 }
 
 .campaign-split {
@@ -4962,8 +4974,8 @@ main {
 
 .how-media {
   justify-self: center;
-  width: min(430px, 100%);
-  aspect-ratio: 430 / 564;
+  width: min(550px, 75%);
+  aspect-ratio: 720 / 1080;
   min-height: 0;
   height: auto;
   background: #f7e9df;
@@ -5023,7 +5035,7 @@ main {
 }
 
 .review-band {
-  padding: clamp(54px, 7vw, 88px) clamp(24px, 9vw, 140px);
+  padding: clamp(50px, 7vw, 45px) clamp(24px, 9vw, 150px);
   grid-template-columns: minmax(0, 1.25fr) minmax(220px, .35fr);
   background: #f7f7f7;
   color: var(--ink);
@@ -5033,7 +5045,7 @@ main {
 .review-band blockquote {
   font-family: "Montserrat", "Prompt", sans-serif;
   font-style: normal;
-  font-size: clamp(24px, 3vw, 44px);
+  font-size: clamp(24px, 3vw, 30px);
   font-weight: 700;
   letter-spacing: -.035em;
 }
@@ -5111,6 +5123,45 @@ main {
 
 .system-product-image {
   background: #fbf6f0;
+}
+
+.system-product-image {
+  position: relative;
+  overflow: hidden;
+}
+
+.system-product-main-image,
+.system-product-hover-image {
+  transition:
+    opacity .34s ease,
+    scale .42s ease,
+    filter .34s ease;
+}
+
+.system-product-hover-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  opacity: 0;
+  pointer-events: none;
+  padding: 0;
+  scale: 1.02;
+  filter: saturate(1.02) contrast(1.01);
+}
+
+.system-product-image.has-hover-image:hover .system-product-main-image,
+.system-product-card:hover .system-product-image.has-hover-image .system-product-main-image {
+  opacity: 0;
+  scale: 1.02;
+}
+
+.system-product-image.has-hover-image:hover .system-product-hover-image,
+.system-product-card:hover .system-product-image.has-hover-image .system-product-hover-image {
+  opacity: 1;
+  scale: 1.04;
 }
 
 .system-product-copy h3 {
@@ -5823,44 +5874,43 @@ footer,
   }
 }
 
-/* Lifestyle photo returns only on the right side, blended into the orange canvas. */
+/* Lifestyle hero uses the clean orange model image and keeps it centered enough for large screens. */
 .tatti-hero .hero-atmosphere {
   display: block;
-  inset: 0 0 0 auto;
-  width: clamp(860px, 56vw, 1900px);
+  inset: 0;
+  width: 100%;
   height: 100%;
-  object-fit: cover;
-  object-position: 54% 50%;
+  object-fit: contain;
+  object-position: right center;
   opacity: 1;
-  filter: saturate(1.04) contrast(1.03) brightness(1);
-  -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, .24) 7%, #000 20%);
-  mask-image: linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, .24) 7%, #000 20%);
+  filter: none;
+  -webkit-mask-image: none;
+  mask-image: none;
 }
 
 .tatti-hero {
-  height: clamp(640px, 51vw, 790px);
-  min-height: 640px;
+  height: clamp(620px, 35.5vw, 780px);
+  min-height: 620px;
   background:
-    radial-gradient(circle at 22% 22%, rgba(255, 198, 63, .38), transparent 24rem),
-    radial-gradient(circle at 76% 78%, rgba(238, 83, 36, .28), transparent 32rem),
-    var(--brand-grad);
+    radial-gradient(circle at 18% 20%, rgba(255, 198, 63, .24), transparent 24rem),
+    linear-gradient(90deg, #f67913 0%, #f67510 38%, #f15f09 68%, #e64d01 100%);
   overflow: hidden;
 }
 
 .tatti-hero::before {
-  inset: 0 auto 0 0;
-  width: min(68vw, 1320px);
+  inset: 0;
+  width: auto;
   background:
     linear-gradient(
       90deg,
-      rgba(246, 127, 14, 1) 0%,
-      rgba(246, 127, 14, .98) 36%,
-      rgba(246, 127, 14, .72) 58%,
-      rgba(246, 127, 14, .28) 78%,
-      rgba(245, 129, 30, 0) 100%
+      rgba(246, 127, 14, .82) 0%,
+      rgba(246, 127, 14, .54) 18%,
+      rgba(246, 127, 14, .16) 30%,
+      rgba(246, 127, 14, .02) 42%,
+      rgba(246, 127, 14, 0) 54%,
+      rgba(246, 127, 14, 0) 100%
     ),
-    linear-gradient(180deg, rgba(238, 83, 36, .02), rgba(137, 51, 9, .04)),
-    radial-gradient(circle at 21% 48%, rgba(255, 253, 251, .13), transparent 26rem);
+    radial-gradient(circle at 21% 48%, rgba(255, 253, 251, .10), transparent 24rem);
 }
 
 /* Hero copy style like the compact brand reference */
@@ -5869,11 +5919,11 @@ footer,
   height: 100%;
   min-height: 0;
   box-sizing: border-box;
-  padding-top: clamp(54px, 5vw, 84px);
+  padding-top: clamp(60px, 10vw, 90px);
   padding-bottom: clamp(46px, 5vw, 76px);
   padding-left: clamp(56px, 7.2vw, 160px);
   align-items: flex-start;
-  justify-content: center;
+  justify-content: flex-start;
   text-align: left;
 }
 
@@ -5886,6 +5936,7 @@ footer,
 .tatti-hero .hero-logo-image {
   width: clamp(250px, 21vw, 390px);
   margin: -34px 0 24px;
+  transform: translateX(60px);
 }
 
 .tatti-hero .hero-copy h1 {
@@ -5926,13 +5977,13 @@ footer,
   padding: 10px 26px;
   border-color: rgba(255, 253, 251, .72);
   background: rgba(255, 253, 251, .08);
-  font-size: clamp(12px, 1vw, 15px);
+  font-size: clamp(15px, 1.5vw, 20px);
 }
 
 @media (min-width: 1600px) {
   .tatti-hero .hero-atmosphere {
-    width: clamp(1050px, 54vw, 2050px);
-    object-position: 52% 50%;
+    width: 100%;
+    object-position: right center;
   }
 
   .tatti-hero .hero-copy {
@@ -5953,7 +6004,7 @@ footer,
 
 @media (min-width: 2400px) {
   .tatti-hero {
-    height: clamp(720px, 37vw, 900px);
+    height: clamp(700px, 31vw, 860px);
   }
 
   .tatti-hero .hero-copy {
@@ -5972,8 +6023,8 @@ footer,
   }
 
   .tatti-hero .hero-atmosphere {
-    width: clamp(1320px, 56vw, 2300px);
-    object-position: 50% 50%;
+    width: 100%;
+    object-position: right center;
   }
 }
 
@@ -5983,8 +6034,8 @@ footer,
   }
 
   .tatti-hero .hero-atmosphere {
-    width: 78vw;
-    object-position: 58% 50%;
+    width: 100%;
+    object-position: right center;
   }
 
   .tatti-hero .hero-copy {
@@ -6078,18 +6129,24 @@ footer,
   background:
     linear-gradient(180deg, var(--paper) 0%, var(--fill) 38%, var(--paper) 100%);
 }
-
 .products-page-hero {
+  position: relative;
   width: 100%;
   min-height: clamp(380px, 22vw, 520px);
   padding: clamp(58px, 5.4vw, 108px) clamp(36px, 5vw, 112px);
   box-sizing: border-box;
-  background:
-    linear-gradient(90deg, rgba(255, 253, 251, .99) 0%, rgba(255, 246, 236, .96) 34%, rgba(255, 246, 236, .64) 57%, rgba(255, 246, 236, .2) 100%),
-    url("./assets/hero/hero-orange-products-balanced.png") right center / auto 112% no-repeat;
+  overflow: hidden;
+
+  background-color: #d34a05;
+  background-image: url("./assets/hero/banner1.png");
+  background-position: right center;
+  background-size: auto 155%;
+  background-repeat: no-repeat;
 }
 
+
 .products-page-hero h1 {
+  padding-top: 20px;
   max-width: min(900px, 58vw);
   font-size: clamp(58px, 5.8vw, 128px);
 }
@@ -6154,6 +6211,43 @@ footer,
 
 .products-grid .product-media {
   background: #fffaf6;
+}
+
+.product-image-button {
+  position: relative;
+  overflow: hidden;
+}
+
+.product-image-button .product-main-image,
+.product-image-button .product-hover-image {
+  transition:
+    opacity .34s ease,
+    scale .42s ease,
+    filter .34s ease;
+}
+
+.product-image-button .product-hover-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  opacity: 0;
+  pointer-events: none;
+  padding: 0;
+  scale: 1.02;
+  filter: saturate(1.02) contrast(1.01);
+}
+
+.product-image-button.has-hover-image:hover .product-main-image {
+  opacity: 0;
+  scale: 1.02;
+}
+
+.product-image-button.has-hover-image:hover .product-hover-image {
+  opacity: 1;
+  scale: 1.04;
 }
 
 .products-grid .product-copy {
