@@ -182,8 +182,8 @@ export function HeaderContainer({
         </button>
         <button onClick={() => onSelectCategory("MINI Size")}>MINI SIZE</button>
         <button onClick={() => onSelectCategory(categoryMedium)}>MEDIUM SIZE</button>
-        <button onClick={() => onSelectCategory("Travelsize")}>TRAVEL SIZE</button>
         <button onClick={() => onSelectCategory(categoryFull)}>LARGE SIZE</button>
+        <button onClick={() => onSelectCategory("Travelsize")}>OFFLINE ONLY</button>
         <button onClick={onNavigateProducts}>ALL PRODUCTS</button>
         <a href="#how-to">HOW TO</a>
         <a href="#real-looks">REAL LOOKS</a>

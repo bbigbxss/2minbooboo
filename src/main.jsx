@@ -387,14 +387,21 @@ products.forEach((product) => {
   }
 });
 
-const normalizeProductName = (value = "") =>
-  value
+const normalizeProductName = (value = "", options = {}) => {
+  const normalized = value
     .toLocaleLowerCase()
     .replace(/booboo/g, "")
     .replace(/false eyelash/g, "")
-    .replace(/\b0?([12])\b/g, "")
     .replace(/\s+/g, " ")
     .trim();
+
+  if (options.keepNumbers) return normalized;
+
+  return normalized.replace(/\b0?([12])\b/g, "").replace(/\s+/g, " ").trim();
+};
+
+const normalizeProductNameForCategory = (value = "", category = "") =>
+  normalizeProductName(value, { keepNumbers: category === CATEGORY_TRAVEL });
 
 const getLimitedEditionMiniIndex = (product) => {
   if (product?.category !== CATEGORY_MINI) return -1;
@@ -418,7 +425,7 @@ const sortLimitedEditionMiniFirst = (items) =>
 const staticProductsById = new Map(products.map((product) => [product.id, product]));
 const staticProductsByName = new Map(
   products.map((product) => [
-    `${product.category}-${normalizeProductName(product.name)}`,
+    `${product.category}-${normalizeProductNameForCategory(product.name, product.category)}`,
     product,
   ]),
 );
@@ -442,13 +449,19 @@ const isDeployUnsafeImageSrc = (src = "") => {
 const getStaticProductMatch = (product) =>
   staticProductsById.get(product.id) ??
   staticProductsByName.get(
-    `${product.category}-${normalizeProductName(product.name)}`,
+    `${product.category}-${normalizeProductNameForCategory(product.name, product.category)}`,
   ) ??
   products.find((staticProduct) => {
     if (staticProduct.category !== product.category) return false;
 
-    const staticName = normalizeProductName(staticProduct.name);
-    const productName = normalizeProductName(product.name);
+    const staticName = normalizeProductNameForCategory(
+      staticProduct.name,
+      staticProduct.category,
+    );
+    const productName = normalizeProductNameForCategory(
+      product.name,
+      product.category,
+    );
     if (!staticName || !productName) return false;
 
     return staticName.includes(productName) || productName.includes(staticName);
