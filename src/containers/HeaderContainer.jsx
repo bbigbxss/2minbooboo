@@ -25,6 +25,7 @@ export function HeaderContainer({
   onOpenCart,
   onOpenMobileMenu,
   onCloseMobileMenu,
+  onOpenCareer,
   onSelectCategory,
   onSelectFeatured,
   onNavigateHome,
@@ -62,7 +63,7 @@ export function HeaderContainer({
       <div className="audience-tabs" data-container="audience-tabs" aria-label="เลือกประสบการณ์">
         <button className="is-active" onClick={onNavigateHome}>2MINBOOBOO</button>
         <button onClick={() => onSelectCategory("MINI Size")}>LASH LOVERS</button>
-        <button onClick={() => onSelectCategory(categoryMedium)}>RESELLERS</button>
+        <button onClick={onOpenCareer}>CARRER</button>
       </div>
 
       <header className="site-header tatti-header" data-container="site-header-main">
@@ -175,14 +176,14 @@ export function HeaderContainer({
       </header>
 
       <nav className="tatti-category-nav" data-container="category-navigation" aria-label="หมวดหมู่สินค้า">
+         <button onClick={() => onSelectFeatured("BEST SELLERS")}>BEST SELLERS</button>
         <button className={megaOpen ? "is-active" : ""} onClick={onToggleMega}>
           SHOP <ChevronDown size={14} />
         </button>
         <button onClick={() => onSelectCategory("MINI Size")}>MINI SIZE</button>
         <button onClick={() => onSelectCategory(categoryMedium)}>MEDIUM SIZE</button>
         <button onClick={() => onSelectCategory("Travelsize")}>TRAVEL SIZE</button>
-        <button onClick={() => onSelectCategory(categoryFull)}>FULL SIZE</button>
-        <button onClick={() => onSelectFeatured("BEST SELLERS")}>BEST SELLERS</button>
+        <button onClick={() => onSelectCategory(categoryFull)}>LARGE SIZE</button>
         <button onClick={onNavigateProducts}>ALL PRODUCTS</button>
         <a href="#how-to">HOW TO</a>
         <a href="#real-looks">REAL LOOKS</a>

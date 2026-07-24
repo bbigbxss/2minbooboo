@@ -28,6 +28,7 @@ export function FooterContainer({ LogoComponent }) {
         </div>
         <div>
           <h3>HELP</h3>
+          <a href="https://lin.ee/PxDSbDy">Contact Us</a>
           <a href="#how-to">How to use</a>
           <a href="#real-looks">Real looks</a>
           <a href="#top">Shipping & Returns</a>
@@ -35,9 +36,7 @@ export function FooterContainer({ LogoComponent }) {
         <div>
           <h3>FOLLOW</h3>
           <a href="https://www.instagram.com/2minbooboo_official?igsh=c2d2ZHB4YzN0NGc1">Instagram</a>
-          <a href="https://www.tiktok.com/@2minbooboo?is_from_webapp=1&sender_device=pc">
-            TikTok
-          </a>
+          <a href="https://www.tiktok.com/@2minbooboo?is_from_webapp=1&sender_device=pc">TikTok</a>
           <a href="https://shopee.co.th/2minbooboo">Shopee</a>
         </div>
       </div>

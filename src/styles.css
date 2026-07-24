@@ -1944,6 +1944,111 @@ footer {
   background: var(--cream);
 }
 
+.career-modal-overlay {
+  position: fixed;
+  z-index: 180;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: clamp(22px, 4vw, 58px);
+  background:
+    radial-gradient(circle at 50% 35%, rgba(255, 183, 64, .22), transparent 42%),
+    rgba(42, 33, 28, .42);
+  backdrop-filter: blur(8px);
+}
+
+.career-modal {
+  position: relative;
+  width: min(760px, 92vw);
+  min-height: 360px;
+  padding: clamp(54px, 6vw, 82px) clamp(28px, 5vw, 74px);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  border: 1px solid rgba(246, 83, 16, .38);
+  border-radius: 30px;
+  background:
+    linear-gradient(135deg, rgba(255, 253, 248, .98), rgba(255, 239, 224, .96)),
+    var(--cream);
+  box-shadow: 0 35px 100px rgba(94, 39, 8, .32);
+}
+
+.career-modal::before {
+  content: "";
+  position: absolute;
+  inset: 18px;
+  pointer-events: none;
+  border: 1px solid rgba(246, 83, 16, .18);
+  border-radius: 22px;
+}
+
+.career-modal-close {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  z-index: 2;
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(246, 83, 16, .45);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .82);
+  color: var(--orange);
+  cursor: pointer;
+  transition: transform .2s ease, background .2s ease, color .2s ease;
+}
+
+.career-modal-close:hover {
+  transform: rotate(8deg) scale(1.04);
+  background: var(--orange);
+  color: var(--on-orange);
+}
+
+.career-modal-eyebrow {
+  margin: 0 0 18px;
+  color: var(--orange);
+  font-family: "Bebas Neue", "Anton", sans-serif;
+  font-size: clamp(15px, 1.6vw, 22px);
+  letter-spacing: .18em;
+}
+
+.career-modal h2 {
+  max-width: 620px;
+  margin: 0;
+  color: var(--ink);
+  font-family: "Prompt", "Montserrat", sans-serif;
+  font-size: clamp(34px, 4.4vw, 56px);
+  font-weight: 900;
+  line-height: 1.12;
+}
+
+.career-modal-copy {
+  margin: 26px 0 10px;
+  color: var(--brown);
+  font-family: "Montserrat", "Prompt", sans-serif;
+  font-size: clamp(15px, 1.4vw, 18px);
+  font-weight: 700;
+  letter-spacing: .02em;
+}
+
+.career-modal a {
+  color: var(--orange);
+  font-family: "Montserrat", "Prompt", sans-serif;
+  font-size: clamp(18px, 2vw, 28px);
+  font-weight: 900;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.career-modal a:hover {
+  text-decoration: underline;
+  text-underline-offset: 5px;
+}
+
 .search-top {
   display: flex;
   align-items: center;
@@ -4675,12 +4780,15 @@ main {
   top: 14px;
   left: 14px;
   border-radius: 999px;
+  padding: 7px 12px;
   background: #f7dce7;
   color: var(--brown);
   font-family: "Montserrat", "Prompt", sans-serif;
   font-size: 9px;
   font-weight: 900;
   letter-spacing: .12em;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .heart-button,

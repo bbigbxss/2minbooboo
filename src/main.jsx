@@ -106,6 +106,7 @@ const eyeShowcaseModules = import.meta.glob(
 );
 
 const CATEGORY_MINI = "MINI Size";
+const CATEGORY_TRAVEL = "Travelsize";
 const CATEGORY_MEDIUM = "Medium Size";
 const CATEGORY_FULL = "กล่องใหญ่";
 const CATEGORY_SINGLE = "ขนตาเดี่ยว";
@@ -115,7 +116,7 @@ const CATEGORY_HOW = "แบบใส่ก้าน";
 const categoryOrder = [
   CATEGORY_ALL,
   CATEGORY_MINI,
-  "Travelsize",
+  CATEGORY_TRAVEL,
   CATEGORY_MEDIUM,
   CATEGORY_FULL,
   CATEGORY_REAL,
@@ -125,9 +126,9 @@ const categoryOrder = [
 const categoryLabels = {
   [CATEGORY_ALL]: "ALL",
   [CATEGORY_MINI]: "MINI SIZE",
-  Travelsize: "TRAVEL SIZE",
+  [CATEGORY_TRAVEL]: "TRAVEL SIZE",
   [CATEGORY_MEDIUM]: "MEDIUM SIZE",
-  [CATEGORY_FULL]: "FULL SIZE",
+  [CATEGORY_FULL]: "LARGE SIZE",
   [CATEGORY_REAL]: "REAL LOOKS",
   [CATEGORY_HOW]: "HOW TO",
 };
@@ -140,8 +141,8 @@ const realLookVideos = [
 ];
 
 const categoryPrices = {
-  [CATEGORY_MINI]: 189,
-  Travelsize: 259,
+  [CATEGORY_MINI]: 89,
+  [CATEGORY_TRAVEL]: 49,
   [CATEGORY_MEDIUM]: 299,
   [CATEGORY_FULL]: 349,
   [CATEGORY_REAL]: 229,
@@ -182,6 +183,8 @@ const seriesDetails = {
   "bangkok babe": ["Bold Night", "12 mm"],
   bankkokbabe: ["Bold Night", "12 mm"],
 };
+
+const limitedEditionMiniOrder = ["flora", "dahlia", "orchid"];
 
 const prettify = (value) =>
   value
@@ -393,6 +396,25 @@ const normalizeProductName = (value = "") =>
     .replace(/\s+/g, " ")
     .trim();
 
+const getLimitedEditionMiniIndex = (product) => {
+  if (product?.category !== CATEGORY_MINI) return -1;
+  const name = normalizeProductName(product.name);
+  return limitedEditionMiniOrder.findIndex((item) => name.includes(item));
+};
+
+const isLimitedEditionMini = (product) => getLimitedEditionMiniIndex(product) >= 0;
+
+const sortLimitedEditionMiniFirst = (items) =>
+  [...items].sort((a, b) => {
+    const aIndex = getLimitedEditionMiniIndex(a);
+    const bIndex = getLimitedEditionMiniIndex(b);
+
+    if (aIndex >= 0 && bIndex >= 0) return aIndex - bIndex;
+    if (aIndex >= 0) return -1;
+    if (bIndex >= 0) return 1;
+    return 0;
+  });
+
 const staticProductsById = new Map(products.map((product) => [product.id, product]));
 const staticProductsByName = new Map(
   products.map((product) => [
@@ -537,11 +559,11 @@ const heroSlides = [
 ];
 
 const exploreCategories = [
+  { label: "BEST SELLERS", value: "BEST SELLERS" },
   { label: "MINI SIZE", value: "MINI Size" },
   { label: "MEDIUM SIZE", value: CATEGORY_MEDIUM },
-  { label: "FULL SIZE", value: CATEGORY_FULL },
-  { label: "TRAVEL SIZE", value: "Travelsize" },
-  { label: "BEST SELLERS", value: "BEST SELLERS" }
+  { label: "LARGE SIZE", value: CATEGORY_FULL },
+  { label: "OFFLINE ONLY", value: "Travelsize" },
 ];
 
 const marqueeMessages = [
@@ -626,19 +648,13 @@ const categoryTiles = [
     icon: Sparkles,
   },
   {
-    label: "TRAVEL SIZE",
-    note: "พกไปได้ทุกที่",
-    category: "Travelsize",
-    icon: Package,
-  },
-  {
     label: "MEDIUM SIZE",
     note: "กล่องกลาง ใช้ง่าย",
     category: CATEGORY_MEDIUM,
     icon: Gift,
   },
   {
-    label: "FULL SIZE",
+    label: "LARGE SIZE",
     note: "คุ้ม ใช้ได้นาน",
     category: CATEGORY_FULL,
     icon: Gift,
@@ -648,6 +664,12 @@ const categoryTiles = [
     note: "ดูบนดวงตาจริง",
     category: CATEGORY_REAL,
     icon: Eye,
+  },
+  {
+    label: "OFFLINE ONLY",
+    note: "พกไปได้ทุกที่",
+    category: "Travelsize",
+    icon: Package,
   },
 ];
 
@@ -756,6 +778,11 @@ function ProductCard({ product, onAdd, compact = false }) {
   const activeFallbackMedia = getProductFallbackMedia(product, imageIndex);
   const hasMultipleImages = media.length > 1;
   const [mood, length] = getSeriesDetail(product.name);
+  const badgeText = isLimitedEditionMini(product)
+    ? "NEW · LIMITED EDITION"
+    : product.isNew
+      ? "NEW"
+      : "";
 
   useEffect(() => {
     if (imageIndex >= media.length) {
@@ -784,7 +811,7 @@ function ProductCard({ product, onAdd, compact = false }) {
       style={{ "--series-color": getSeriesColor(product.name) }}
     >
       <div className="product-media" data-container="product-card-media">
-        {product.isNew ? <span className="product-badge">NEW</span> : null}
+        {badgeText ? <span className="product-badge">{badgeText}</span> : null}
         <button
           className={`heart-button ${liked ? "is-liked" : ""}`}
           onClick={() => setLiked((value) => !value)}
@@ -987,7 +1014,7 @@ function ProductSystemSection({
     },
     {
       key: "full",
-      label: "Big Size",
+      label: "Large Size",
       note: "กล่องใหญ่",
       products: fullItems,
       category: CATEGORY_FULL,
@@ -1120,7 +1147,7 @@ function CartDrawer({
     (total, item) => total + item.price * item.quantity,
     0,
   );
-  const freeShippingTarget = 599;
+  const freeShippingTarget = 399;
   const remaining = Math.max(0, freeShippingTarget - subtotal);
   const progress = Math.min(100, (subtotal / freeShippingTarget) * 100);
 
@@ -1250,7 +1277,9 @@ function CartDrawer({
                 <strong>฿{subtotal.toLocaleString("th-TH")}</strong>
               </div>
               <p>ภาษีรวมแล้ว ค่าจัดส่งคำนวณในขั้นตอนถัดไป</p>
-              <button>ดำเนินการสั่งซื้อ</button>
+              <button onClick={() => window.open("https://linktr.ee/2minBooboolashes?utm_source=linktree_profile_share&ltsid=421f992e-0dcb-4aaf-b5c9-5c43f2717a9a", "_blank")}>
+                ดำเนินการสั่งซื้อ
+              </button>
             </div>
           </>
         )}
@@ -1327,6 +1356,57 @@ function SearchOverlay({ products: allProducts, onClose, onAdd }) {
   );
 }
 
+function CareerModal({ onClose }) {
+  useEffect(() => {
+    document.body.classList.add("overlay-open");
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") onClose();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.classList.remove("overlay-open");
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [onClose]);
+
+  return createPortal(
+    <div
+      className="career-modal-overlay"
+      role="presentation"
+      onClick={onClose}
+      data-container="career-modal-overlay"
+    >
+      <section
+        className="career-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="career-modal-title"
+        onClick={(event) => event.stopPropagation()}
+        data-container="career-modal"
+      >
+        <button
+          className="career-modal-close"
+          onClick={onClose}
+          aria-label="ปิด popup career"
+        >
+          <X size={24} />
+        </button>
+        <p className="career-modal-eyebrow">2MINBOOBOO CARRER</p>
+        <h2 id="career-modal-title">สมัครเป็น</h2>
+        <h2 id="career-modal-title">( AFFILIATE )</h2>
+        <h2 id="career-modal-title">2minBooBoo</h2>
+        <p className="career-modal-copy">CONTACT US</p>
+        <a href="mailto:2minbooboolashes@gmail.com">
+          2minbooboolashes@gmail.com
+        </a>
+      </section>
+    </div>,
+    document.body,
+  );
+}
+
 function App() {
   const [currentRoute, setCurrentRoute] = useState(getAppRoute);
   const isAdminRoute = currentRoute === "admin";
@@ -1334,6 +1414,7 @@ function App() {
   const [cart, setCart] = useState([]);
   const [cartOpen, setCartOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [careerOpen, setCareerOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [megaOpen, setMegaOpen] = useState(false);
   const [heroIndex, setHeroIndex] = useState(0);
@@ -1605,12 +1686,18 @@ function App() {
   }, [storefrontProducts]);
 
   const featuredProducts = useMemo(
-    () =>
-      featuredCategory === "BEST SELLERS"
-        ? bestSellers
-        : storefrontProducts.filter(
-            (product) => product.category === featuredCategory,
-          ),
+    () => {
+      const nextProducts =
+        featuredCategory === "BEST SELLERS"
+          ? bestSellers
+          : storefrontProducts.filter(
+              (product) => product.category === featuredCategory,
+            );
+
+      return featuredCategory === CATEGORY_MINI
+        ? sortLimitedEditionMiniFirst(nextProducts)
+        : nextProducts;
+    },
     [bestSellers, featuredCategory, storefrontProducts],
   );
   const featuredProductsFitInDesktop = featuredProducts.length <= 5;
@@ -1988,6 +2075,7 @@ function App() {
         onOpenCart={() => setCartOpen(true)}
         onOpenMobileMenu={() => setMobileMenuOpen(true)}
         onCloseMobileMenu={() => setMobileMenuOpen(false)}
+        onOpenCareer={() => setCareerOpen(true)}
         onSelectCategory={selectCategory}
         onSelectFeatured={selectFeatured}
         onNavigateHome={() => navigateToRoute("home")}
@@ -2196,6 +2284,8 @@ function App() {
 
       </>
       ) : null}
+
+      {careerOpen ? <CareerModal onClose={() => setCareerOpen(false)} /> : null}
 
       {searchOpen ? (
         <SearchOverlay
