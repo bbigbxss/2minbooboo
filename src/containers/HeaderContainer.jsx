@@ -93,7 +93,7 @@ export function HeaderContainer({
       <div className="audience-tabs" data-container="audience-tabs" aria-label="เลือกประสบการณ์">
         <button className="is-active" onClick={onNavigateHome}>2MINBOOBOO</button>
         <button onClick={onOpenToolKit}>TOOL KIT</button>
-        <button onClick={onOpenCareer}>CARRER</button>
+        <button onClick={onOpenCareer}>CAREER</button>
       </div>
 
       <header className="site-header tatti-header" data-container="site-header-main">

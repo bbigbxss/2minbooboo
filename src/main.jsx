@@ -2820,7 +2820,7 @@ function App() {
             </blockquote>
             <Stars count={4} />
             <blockquote>
-              “ไม่ระคายเคืองจ่ายไปเรียนก็ไม่โป๊ะ”
+              “ไม่ระคายเคืองใส้ไปเรียนก็ไม่โป๊ะ”
             </blockquote>
             <Stars count={4} />
             <blockquote>

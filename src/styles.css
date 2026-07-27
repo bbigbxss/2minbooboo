@@ -140,6 +140,8 @@ img {
   font-size: 36px;
   font-weight: 700;
   letter-spacing: -.055em;
+  font-variant-numeric: lining-nums;
+  font-feature-settings: "lnum" 1;
 }
 
 .main-nav {
@@ -2034,7 +2036,7 @@ footer {
   inset: 0;
   display: grid;
   place-items: center;
-  padding: clamp(22px, 4vw, 58px);
+  padding: clamp(14px, 3vmin, 40px);
   background:
     radial-gradient(circle at 50% 35%, rgba(255, 183, 64, .22), transparent 42%),
     rgba(42, 33, 28, .42);
@@ -2134,11 +2136,14 @@ footer {
 }
 
 .toolkit-modal {
-  width: min(1080px, 94vw);
+  width: min(960px, calc(100vw - 28px));
+  max-height: calc(100dvh - 28px);
   min-height: auto;
   align-items: stretch;
   justify-content: flex-start;
-  padding: clamp(34px, 4vw, 60px);
+  padding: clamp(30px, 3vmin, 44px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .toolkit-modal-grid {
@@ -2162,7 +2167,7 @@ footer {
   margin: 0 0 18px;
   color: var(--ink);
   font-family: "Prompt", "Montserrat", sans-serif;
-  font-size: clamp(58px, 8vw, 112px);
+  font-size: clamp(52px, min(7vw, 11dvh), 88px);
   font-weight: 950;
   letter-spacing: -.05em;
   line-height: .9;
@@ -2179,7 +2184,7 @@ footer {
 }
 
 .toolkit-modal-image-card {
-  min-height: clamp(360px, 36vw, 520px);
+  min-height: clamp(280px, 42dvh, 420px);
   padding: 0;
   display: grid;
   place-items: center;
@@ -2190,9 +2195,9 @@ footer {
 }
 
 .toolkit-modal-image-card img {
-  width: min(118%, 620px);
+  width: min(112%, 520px);
   max-width: none;
-  max-height: clamp(390px, 42vw, 580px);
+  max-height: clamp(300px, 50dvh, 460px);
   object-fit: contain;
   display: block;
   filter: drop-shadow(0 26px 34px rgba(94, 39, 8, .18));
@@ -2203,7 +2208,7 @@ footer {
   z-index: 1;
   display: flex;
   justify-content: flex-end;
-  margin-top: clamp(18px, 3vw, 30px);
+  margin-top: clamp(12px, 2vmin, 20px);
 }
 
 .toolkit-modal-shop {
@@ -2233,7 +2238,9 @@ footer {
 
 @media (max-width: 760px) {
   .toolkit-modal {
-    padding: 34px 20px 24px;
+    width: min(94vw, 520px);
+    max-height: calc(100dvh - 20px);
+    padding: 58px 18px 22px;
   }
 
   .toolkit-modal-grid {
@@ -2241,12 +2248,12 @@ footer {
   }
 
   .toolkit-modal-image-card {
-    min-height: 260px;
+    min-height: clamp(190px, 34dvh, 270px);
   }
 
   .toolkit-modal-image-card img {
-    width: min(106%, 390px);
-    max-height: 340px;
+    width: min(100%, 360px);
+    max-height: min(34dvh, 300px);
   }
 
   .toolkit-modal-copy {

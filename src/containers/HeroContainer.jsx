@@ -18,7 +18,7 @@ export function HeroContainer({ heroImage, logoImage }) {
         />
         <h1>
           <span className="hero-title-line">2Minutes to Love Yourself</span>
-          <span className="hero-title-line">Bueaty with No Limits</span>
+          <span className="hero-title-line">Beauty with No Limits</span>
         </h1>
         {/* <span>มีกาวในตัว ติดปุ๊บสวยปั๊บ ภายใน 2 นาที</span> */}
         <div className="hero-feature-pills" data-container="hero-feature-pills">
