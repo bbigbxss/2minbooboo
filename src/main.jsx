@@ -37,6 +37,7 @@ import {
 } from "./containers";
 import heroWhiteLogo from "./assets/hero/hero-2minbooboo-logo-crop.png";
 import heroOrangeProducts from "./assets/hero/hero-lifestyle-model-orange.png";
+import allProductsBanner from "./assets/hero/all-products-banner.png";
 import bigBangkokBabeImage from "./assets/big-size-md/Bangkok Babe.png";
 import bigBloomingImage from "./assets/big-size-md/Blooming.png";
 import bigCaliforniaGirlImage from "./assets/big-size-md/California Girl.png";
@@ -1153,14 +1154,13 @@ function ProductListingPage({
   return (
     <main className="products-page" data-container="products-page">
       <section className="products-page-hero" data-container="products-page-hero">
-        {/* <p>2MINBOOBOO COLLECTION</p>
-        <h1>สินค้าทั้งหมด</h1>
-        <span>
-          เลือกดูขนตาทุกรุ่นแบบจัดเต็ม กดซูมรูปได้ และเพิ่มลงถุงได้จากหน้านี้เลย
-        </span>
-        <button onClick={onBackHome}>
-          กลับหน้าแรก <ArrowRight />
-        </button> */}
+        <img
+          src={allProductsBanner}
+          alt="2minBooboo All Products Collection"
+          width="2048"
+          height="768"
+          loading="eager"
+        />
       </section>
 
       <section className="products-page-panel" data-container="products-page-catalog">
@@ -1886,6 +1886,13 @@ function App() {
     setMegaOpen(false);
     setMobileMenuOpen(false);
     navigateToRoute("products");
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        document
+          .querySelector('[data-container="products-page-catalog"]')
+          ?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    });
   };
 
   const scrollCatalog = (direction) => {
