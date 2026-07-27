@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ChevronDown,
   ChevronRight,
@@ -26,6 +26,7 @@ export function HeaderContainer({
   onOpenMobileMenu,
   onCloseMobileMenu,
   onOpenCareer,
+  onOpenToolKit,
   onSelectCategory,
   onSelectFeatured,
   onNavigateHome,
@@ -40,6 +41,35 @@ export function HeaderContainer({
     (item) => item !== categoryReal && item !== categoryHow,
   );
   const megaProduct = storefrontMiniProducts[0];
+  const [megaClosing, setMegaClosing] = useState(false);
+  const megaCloseTimer = useRef(null);
+  const showMegaMenu = megaOpen || megaClosing;
+
+  useEffect(() => {
+    return () => {
+      if (megaCloseTimer.current) {
+        window.clearTimeout(megaCloseTimer.current);
+      }
+    };
+  }, []);
+
+  const closeMegaMenu = () => {
+    if (!megaOpen || megaClosing) {
+      return;
+    }
+
+    setMegaClosing(true);
+    megaCloseTimer.current = window.setTimeout(() => {
+      onToggleMega();
+      setMegaClosing(false);
+      megaCloseTimer.current = null;
+    }, 220);
+  };
+
+  const selectAndCloseMega = (callback) => {
+    callback();
+    closeMegaMenu();
+  };
 
   return (
     <>
@@ -62,7 +92,7 @@ export function HeaderContainer({
 
       <div className="audience-tabs" data-container="audience-tabs" aria-label="เลือกประสบการณ์">
         <button className="is-active" onClick={onNavigateHome}>2MINBOOBOO</button>
-        <button onClick={() => onSelectCategory("MINI Size")}>LASH LOVERS</button>
+        <button onClick={onOpenToolKit}>TOOL KIT</button>
         <button onClick={onOpenCareer}>CARRER</button>
       </div>
 
@@ -117,12 +147,33 @@ export function HeaderContainer({
           <span>{cartCount}</span>
         </button>
 
-        {megaOpen ? (
-          <div className="mega-menu tatti-mega-menu" data-container="mega-menu-shop">
+        {showMegaMenu ? (
+          <>
+          <button
+            type="button"
+            className={`mega-menu-backdrop${megaClosing ? " is-closing" : ""}`}
+            aria-label="ปิดเมนู Shop"
+            onClick={closeMegaMenu}
+          />
+          <div
+            className={`mega-menu tatti-mega-menu${megaClosing ? " is-closing" : ""}`}
+            data-container="mega-menu-shop"
+          >
+            <button
+              type="button"
+              className="mega-menu-close"
+              aria-label="ปิดเมนู Shop"
+              onClick={closeMegaMenu}
+            >
+              <X size={26} strokeWidth={1.8} />
+            </button>
             <div>
               <span>SHOP BY FORMAT</span>
               {selectableCategories.map((item) => (
-                <button key={item} onClick={() => onSelectCategory(item)}>
+                <button
+                  key={item}
+                  onClick={() => selectAndCloseMega(() => onSelectCategory(item))}
+                >
                   {categoryLabels[item]}
                 </button>
               ))}
@@ -136,7 +187,7 @@ export function HeaderContainer({
                     href="#/products"
                     onClick={(event) => {
                       event.preventDefault();
-                      onNavigateProducts();
+                      selectAndCloseMega(onNavigateProducts);
                     }}
                   >
                     {name}
@@ -146,15 +197,15 @@ export function HeaderContainer({
             </div>
             <div>
               <span>HELP ME CHOOSE</span>
-              <a href="#how-to" onClick={onToggleMega}>How to apply</a>
-              <a href="#real-looks" onClick={onToggleMega}>Real looks</a>
-              <button onClick={() => onSelectFeatured("BEST SELLERS")}>
+              <a href="#how-to" onClick={closeMegaMenu}>How to apply</a>
+              <a href="#real-looks" onClick={closeMegaMenu}>Real looks</a>
+              <button onClick={() => selectAndCloseMega(() => onSelectFeatured("BEST SELLERS"))}>
                 Best sellers
               </button>
             </div>
             <button
               className="mega-feature"
-              onClick={() => onSelectCategory("MINI Size")}
+              onClick={() => selectAndCloseMega(() => onSelectCategory("MINI Size"))}
             >
               <img
                 src={megaProduct?.media?.[0]?.src ?? megaProduct?.image}
@@ -172,6 +223,7 @@ export function HeaderContainer({
               </span>
             </button>
           </div>
+          </>
         ) : null}
       </header>
 
@@ -184,6 +236,7 @@ export function HeaderContainer({
         <button onClick={() => onSelectCategory(categoryMedium)}>MEDIUM SIZE</button>
         <button onClick={() => onSelectCategory(categoryFull)}>LARGE SIZE</button>
         <button onClick={() => onSelectCategory("Travelsize")}>OFFLINE ONLY</button>
+        <button onClick={() => onSelectCategory("TOOL KIT")}>TOOL KIT</button>
         <button onClick={onNavigateProducts}>ALL PRODUCTS</button>
         <a href="#how-to">HOW TO</a>
         <a href="#real-looks">REAL LOOKS</a>

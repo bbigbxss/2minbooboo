@@ -53,6 +53,7 @@ import mediumHoverBarbieDollImage from "./assets/medium-size-hover/Barbie Doll.p
 import mediumHoverMoonlightImage from "./assets/medium-size-hover/Moonlight.png";
 import mediumHoverSakuraImage from "./assets/medium-size-hover/Sakura.png";
 import mediumHoverSongkranImage from "./assets/medium-size-hover/Songkran Booboo.png";
+import toolKitImage from "./assets/toolkit/2minBooboo.png";
 import howToThaiPoster from "./assets/videos/how-to-thai-poster.jpg";
 import howToThaiVideo from "./assets/videos/how-to-thai.mp4";
 import realLookNaturalVideo from "./assets/real-look-videos/natural.mp4";
@@ -108,6 +109,7 @@ const eyeShowcaseModules = import.meta.glob(
 const CATEGORY_MINI = "MINI Size";
 const CATEGORY_TRAVEL = "Travelsize";
 const CATEGORY_MEDIUM = "Medium Size";
+const CATEGORY_TOOLKIT = "TOOL KIT";
 const CATEGORY_FULL = "กล่องใหญ่";
 const CATEGORY_SINGLE = "ขนตาเดี่ยว";
 const CATEGORY_REAL = "คนใส่จริง";
@@ -119,6 +121,7 @@ const categoryOrder = [
   CATEGORY_TRAVEL,
   CATEGORY_MEDIUM,
   CATEGORY_FULL,
+  CATEGORY_TOOLKIT,
   CATEGORY_REAL,
   CATEGORY_HOW,
 ];
@@ -129,6 +132,7 @@ const categoryLabels = {
   [CATEGORY_TRAVEL]: "TRAVEL SIZE",
   [CATEGORY_MEDIUM]: "MEDIUM SIZE",
   [CATEGORY_FULL]: "LARGE SIZE",
+  [CATEGORY_TOOLKIT]: "TOOL KIT",
   [CATEGORY_REAL]: "REAL LOOKS",
   [CATEGORY_HOW]: "HOW TO",
 };
@@ -625,6 +629,7 @@ const exploreCategories = [
   { label: "MEDIUM SIZE", value: CATEGORY_MEDIUM },
   { label: "LARGE SIZE", value: CATEGORY_FULL },
   { label: "OFFLINE ONLY", value: "Travelsize" },
+  { label: "TOOL KIT", value: CATEGORY_TOOLKIT}
 ];
 
 const marqueeMessages = [
@@ -830,6 +835,11 @@ function ProductCard({ product, onAdd, compact = false }) {
   const [liked, setLiked] = useState(false);
   const [imageIndex, setImageIndex] = useState(0);
   const [zoomOpen, setZoomOpen] = useState(false);
+  const cardClassName = [
+    "product-card",
+    compact ? "product-card-compact" : "",
+    product.category === CATEGORY_MEDIUM ? "is-medium-size" : "",
+  ].filter(Boolean).join(" ");
   const hoverImage =
     product.hoverImage ?? product.media?.find((item) => item.kind === "hover")?.src;
   const media = product.media?.filter((item) => item.kind !== "hover").length
@@ -867,7 +877,7 @@ function ProductCard({ product, onAdd, compact = false }) {
 
   return (
     <article
-      className={`product-card ${compact ? "product-card-compact" : ""}`}
+      className={cardClassName}
       data-container="product-card"
       style={{ "--series-color": getSeriesColor(product.name) }}
     >
@@ -1407,7 +1417,7 @@ function SearchOverlay({ products: allProducts, onClose, onAdd }) {
               <p>{categoryLabels[product.category] ?? product.category}</p>
               <h3>{product.name}</h3>
               <PriceDisplay product={product} className="search-result-price" />
-            </div>
+             </div>
             <button onClick={() => onAdd(product)}>เพิ่มลงถุง</button>
           </article>
         ))}
@@ -1468,6 +1478,70 @@ function CareerModal({ onClose }) {
   );
 }
 
+function ToolKitModal({ onClose, onShopAll }) {
+  useEffect(() => {
+    document.body.classList.add("overlay-open");
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") onClose();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.classList.remove("overlay-open");
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [onClose]);
+
+  return createPortal(
+    <div
+      className="career-modal-overlay"
+      role="presentation"
+      onClick={onClose}
+      data-container="toolkit-modal-overlay"
+    >
+      <section
+        className="career-modal toolkit-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="toolkit-modal-title"
+        onClick={(event) => event.stopPropagation()}
+        data-container="toolkit-modal"
+      >
+        <button
+          className="career-modal-close"
+          onClick={onClose}
+          aria-label="ปิด popup tool kit"
+        >
+          <X size={24} />
+        </button>
+
+        <div className="toolkit-modal-grid">
+          <div className="toolkit-modal-copy">
+            <p className="career-modal-eyebrow">2MINBOOBOO TOOL KIT</p>
+            <h2 id="toolkit-modal-title">KIT SET</h2>
+            <p>
+              อุปกรณ์สำหรับติดขนตาให้สวยไว ใช้ง่าย และพร้อมพกไปได้ทุกที่
+            </p>
+          </div>
+
+          <div className="toolkit-modal-image-card">
+            <img src={toolKitImage} alt="2minBooBoo Eyelash Tool Kit" />
+          </div>
+        </div>
+
+        <div className="toolkit-modal-actions">
+          <button className="toolkit-modal-shop" onClick={onShopAll}>
+            BUY
+            <ArrowRight size={20} />
+          </button>
+        </div>
+      </section>
+    </div>,
+    document.body,
+  );
+}
+
 function App() {
   const [currentRoute, setCurrentRoute] = useState(getAppRoute);
   const isAdminRoute = currentRoute === "admin";
@@ -1476,6 +1550,7 @@ function App() {
   const [cartOpen, setCartOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [careerOpen, setCareerOpen] = useState(false);
+  const [toolKitOpen, setToolKitOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [megaOpen, setMegaOpen] = useState(false);
   const [heroIndex, setHeroIndex] = useState(0);
@@ -1762,6 +1837,10 @@ function App() {
     [bestSellers, featuredCategory, storefrontProducts],
   );
   const featuredProductsFitInDesktop = featuredProducts.length <= 5;
+  const featuredCategoryShouldScroll =
+    featuredCategory === CATEGORY_MEDIUM || featuredCategory === CATEGORY_FULL;
+  const featuredRailIsShort =
+    featuredProductsFitInDesktop && !featuredCategoryShouldScroll;
 
   const cartCount = cart.reduce(
     (total, item) => total + item.quantity,
@@ -2137,11 +2216,13 @@ function App() {
         onOpenMobileMenu={() => setMobileMenuOpen(true)}
         onCloseMobileMenu={() => setMobileMenuOpen(false)}
         onOpenCareer={() => setCareerOpen(true)}
+        onOpenToolKit={() => setToolKitOpen(true)}
         onSelectCategory={selectCategory}
         onSelectFeatured={selectFeatured}
         onNavigateHome={() => navigateToRoute("home")}
         onNavigateProducts={() => {
           setMegaOpen(false);
+          setCategory(CATEGORY_ALL);
           navigateToRoute("products");
         }}
         getProductFallbackMedia={getProductFallbackMedia}
@@ -2168,7 +2249,7 @@ function App() {
 
       <div className="audience-tabs" data-container="audience-tabs" aria-label="เลือกประสบการณ์">
         <button className="is-active">2MINBOOBOO</button>
-        <button onClick={() => selectCategory("MINI Size")}>LASH LOVERS</button>
+        <button onClick={() => setToolKitOpen(true)}>TOOL KIT</button>
         <button onClick={() => selectCategory(CATEGORY_MEDIUM)}>RESELLERS</button>
       </div>
 
@@ -2292,6 +2373,7 @@ function App() {
         <button onClick={() => selectHeaderCategory(CATEGORY_MEDIUM)}>MEDIUM SIZE</button>
         <button onClick={() => selectHeaderCategory("Travelsize")}>TRAVEL SIZE</button>
         <button onClick={() => selectHeaderCategory(CATEGORY_FULL)}>FULL SIZE</button>
+        <button onClick={() => selectHeaderCategory(CATEGORY_TOOLKIT)}>TOOL KIT</button>
         <button onClick={() => selectFeatured("BEST SELLERS")}>BEST SELLERS</button>
         <button onClick={() => navigateToRoute("products")}>ALL PRODUCTS</button>
         <a href="#how-to">HOW TO</a>
@@ -2347,6 +2429,16 @@ function App() {
       ) : null}
 
       {careerOpen ? <CareerModal onClose={() => setCareerOpen(false)} /> : null}
+      {toolKitOpen ? (
+        <ToolKitModal
+          onClose={() => setToolKitOpen(false)}
+          onShopAll={() => {
+            setCategory(CATEGORY_TOOLKIT);
+            setToolKitOpen(false);
+            navigateToRoute("products");
+          }}
+        />
+      ) : null}
 
       {searchOpen ? (
         <SearchOverlay
@@ -2471,7 +2563,7 @@ function App() {
           </div>
           <div
             className={`explorer-controls ${
-              featuredProductsFitInDesktop ? "is-short" : ""
+              featuredRailIsShort ? "is-short" : ""
             }`}
             data-container="best-sellers-carousel-controls"
           >
@@ -2492,7 +2584,7 @@ function App() {
           </div>
           <div
             className={`explorer-rail ${
-              featuredProductsFitInDesktop ? "is-centered" : ""
+              featuredRailIsShort ? "is-centered" : ""
             }`}
             ref={featuredRailRef}
             data-container="best-sellers-product-carousel"

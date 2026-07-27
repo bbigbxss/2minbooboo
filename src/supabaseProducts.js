@@ -98,8 +98,11 @@ export const saveAdminProduct = async (token, product) => {
   if (error) throw error;
 
   const savedProductId = data?.id ?? product.id;
-  const originalPrice = Number(product.originalPrice || 0);
-  if (originalPrice && savedProductId) {
+  if (savedProductId) {
+    const originalPrice =
+      product.originalPrice === "" || product.originalPrice == null
+        ? null
+        : Number(product.originalPrice);
     const { error: originalPriceError } = await supabase.rpc(
       "admin_set_product_original_price",
       {
@@ -110,7 +113,7 @@ export const saveAdminProduct = async (token, product) => {
     );
 
     if (originalPriceError) {
-      console.warn("Could not save original price", originalPriceError);
+      throw originalPriceError;
     }
   }
 

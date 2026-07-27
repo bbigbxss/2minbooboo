@@ -107,6 +107,7 @@ function ProductForm({
             <option>New MINI Size</option>
             <option>MINI Size</option>
             <option>Travelsize</option>
+            <option>TOOL KIT</option>
             <option>กล่องใหญ่</option>
             <option>ขนตาเดี่ยว</option>
             <option>คนใส่จริง</option>
