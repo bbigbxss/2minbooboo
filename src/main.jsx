@@ -1157,8 +1157,8 @@ function ProductListingPage({
         <img
           src={allProductsBanner}
           alt="2minBooboo All Products Collection"
-          width="2048"
-          height="768"
+          width="1774"
+          height="887"
           loading="eager"
         />
       </section>

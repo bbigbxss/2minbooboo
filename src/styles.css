@@ -6474,23 +6474,25 @@ footer,
 .products-page-hero {
   position: relative;
   width: 100%;
-  height: auto;
-  aspect-ratio: 8 / 3;
+  height: clamp(440px, 42vw, 760px);
   min-height: 0;
-  padding: 0;
+  padding: clamp(18px, 2vw, 36px) clamp(20px, 3vw, 58px) 0;
   box-sizing: border-box;
   overflow: hidden;
   border-bottom: 1px solid var(--line);
-  background: #f45116;
+  background:
+    radial-gradient(circle at 12% 18%, rgba(255, 255, 255, .76) 0, rgba(255, 255, 255, 0) 24%),
+    radial-gradient(circle at 84% 12%, rgba(255, 243, 226, .36) 0, rgba(255, 243, 226, 0) 25%),
+    linear-gradient(118deg, #fff8ef 0%, #ffd8b5 32%, #ff9a55 67%, #f45116 100%);
 }
 
 .products-page-hero img {
   display: block;
   width: 100%;
-  height: auto;
-  aspect-ratio: 8 / 3;
+  height: 100%;
   object-fit: contain;
-  object-position: center center;
+  object-position: center bottom;
+  filter: drop-shadow(0 24px 32px rgba(110, 39, 8, .15));
 }
 
 .products-page-panel {
@@ -6637,14 +6639,13 @@ footer,
 
 @media (max-width: 860px) {
   .products-page-hero {
-    height: auto;
+    height: clamp(300px, 58vw, 500px);
     min-height: 0;
-    padding: 0;
+    padding: 12px 12px 0;
   }
 
   .products-page-hero img {
-    height: auto;
-    aspect-ratio: 8 / 3;
+    height: 100%;
   }
 
   .products-page-panel {
@@ -6667,8 +6668,9 @@ footer,
 
 @media (max-width: 560px) {
   .products-page-hero {
+    height: clamp(260px, 72vw, 340px);
     min-height: 0;
-    padding: 0;
+    padding: 10px 6px 0;
   }
 
   .products-page-tabs {
